@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ElectraHub — EV Charging Platform | Simulate, Deploy, Operate</title>
+    <meta
+      name="description"
+      content="ElectraHub is an EV charging platform that lets you simulate charging operations end to end — OCPP simulator, driver app, and admin portal — then connect real chargers with zero code changes."
+    />
+    <meta property="og:title" content="ElectraHub — EV Charging Platform" />
+    <meta property="og:description" content="Simulate EV charging end to end, then go live on the same platform. OCPP simulator, driver app, admin portal." />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+         DESIGN TOKENS
+      ============================================================ */
+      :root {
+        --bg: #f4f7f5;
+        --bg-2: #eef3f0;
+        --surface: #ffffff;
+        --surface-2: #f8fbf9;
+        --glass: rgba(255, 255, 255, 0.72);
+        --text: #0d1f18;
+        --text-2: #51645c;
+        --line: rgba(13, 31, 24, 0.09);
+        --line-strong: rgba(13, 31, 24, 0.16);
+        --primary: #0c9e6e;
+        --primary-2: #0b8a60;
+        --accent: #14d49a;
+        --electric: #22e3aa;
+        --blue: #2f7df6;
+        --amber: #f0a829;
+        --primary-soft: rgba(12, 158, 110, 0.09);
+        --glow: rgba(20, 212, 154, 0.35);
+        --shadow-sm: 0 2px 10px rgba(13, 31, 24, 0.05);
+        --shadow-md: 0 12px 36px rgba(13, 31, 24, 0.09);
+        --shadow-lg: 0 28px 70px rgba(13, 31, 24, 0.13);
+        --r-xl: 26px;
+        --r-lg: 20px;
+        --r-md: 16px;
+        --r-sm: 12px;
+        --max: 1180px;
+        --font-display: "Sora", "Inter", sans-serif;
+        --font-body: "Inter", "Segoe UI", sans-serif;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --scene-bg: linear-gradient(180deg, #e9f4ef 0%, #dcefe6 100%);
+        --scene-ground: #c9e5d6;
+        --car-body: #12342a;
+        --car-glass: #9fd4be;
+      }
+
+      [data-theme="dark"] {
+        --bg: #070d0b;
+        --bg-2: #0a1210;
+        --surface: #0e1916;
+        --surface-2: #101d19;
+        --glass: rgba(10, 18, 16, 0.72);
+        --text: #e6f1ec;
+        --text-2: #93a8a0;
+        --line: rgba(160, 220, 195, 0.1);
+        --line-strong: rgba(160, 220, 195, 0.18);
+        --primary: #1fce96;
+        --primary-2: #2adfa5;
+        --accent: #2adfa5;
+        --primary-soft: rgba(31, 206, 150, 0.1);
+        --glow: rgba(31, 206, 150, 0.28);
+        --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 12px 36px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.55);
+        --scene-bg: linear-gradient(180deg, #0c1714 0%, #0a1411 100%);
+        --scene-ground: #11241d;
+        --car-body: #1d4636;
+        --car-glass: #57907a;
+      }
+
+      /* ============================================================
+         BASE
+      ============================================================ */
+      * { box-sizing: border-box; margin: 0; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        font-family: var(--font-body);
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background:
+          radial-gradient(900px 500px at 85% -5%, var(--primary-soft), transparent 60%),
+          radial-gradient(700px 420px at -10% 12%, var(--primary-soft), transparent 55%);
+      }
+
+      a { color: inherit; text-decoration: none; }
+      button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+      img, svg { display: block; max-width: 100%; }
+      ::selection { background: var(--primary); color: #fff; }
+
+      h1, h2, h3, h4 {
+        font-family: var(--font-display);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        font-weight: 700;
+      }
+
+      h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); }
+      h3 { font-size: 1.15rem; font-weight: 600; }
+
+      .container {
+        width: min(var(--max), calc(100% - 48px));
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      .section { padding: clamp(64px, 9vw, 110px) 0; }
+
+      .section-head {
+        max-width: 680px;
+        margin-bottom: clamp(36px, 5vw, 56px);
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--primary);
+        margin-bottom: 16px;
+      }
+
+      .kicker::before {
+        content: "";
+        width: 22px;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+      }
+
+      .lede {
+        margin-top: 14px;
+        color: var(--text-2);
+        font-size: 1.05rem;
+      }
+
+      /* ============================================================
+         REVEAL ANIMATIONS
+      ============================================================ */
+      [data-reveal] {
+        opacity: 0;
+        transform: translateY(26px);
+        transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+      }
+      [data-reveal].revealed { opacity: 1; transform: none; }
+      [data-reveal-delay="1"] { transition-delay: 0.08s; }
+      [data-reveal-delay="2"] { transition-delay: 0.16s; }
+      [data-reveal-delay="3"] { transition-delay: 0.24s; }
+      [data-reveal-delay="4"] { transition-delay: 0.32s; }
+      [data-reveal-delay="5"] { transition-delay: 0.4s; }
+
+      /* ============================================================
+         LOADER + PROGRESS + TO-TOP
+      ============================================================ */
+      .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+      .loader.hidden { opacity: 0; visibility: hidden; }
+
+      .loader-bolt {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        box-shadow: 0 0 0 0 var(--glow);
+        animation: loader-pulse 1.1s ease-in-out infinite;
+        color: #fff;
+      }
+      @keyframes loader-pulse {
+        0% { box-shadow: 0 0 0 0 var(--glow); }
+        70% { box-shadow: 0 0 0 22px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+      }
+
+      .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0;
+        z-index: 150;
+        background: linear-gradient(90deg, var(--primary), var(--electric));
+        border-radius: 0 3px 3px 0;
+      }
+
+      .to-top {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 90;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-md);
+        color: var(--primary);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.35s var(--ease);
+      }
+      .to-top.visible { opacity: 1; visibility: visible; transform: none; }
+      .to-top:hover { transform: translateY(-3px); }
+
+      /* ============================================================
+         HEADER / NAV
+      ============================================================ */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        background: var(--glass);
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .site-header.scrolled {
+        border-bottom-color: var(--line);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        height: 72px;
+      }
+
+      .brand { display: flex; align-items: center; gap: 12px; }
+
+      .brand-mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        box-shadow: 0 8px 20px var(--glow);
+      }
+
+      .brand-text strong {
+        font-family: var(--font-display);
+        font-size: 1.06rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        display: block;
+        line-height: 1.2;
+      }
+      .brand-text span {
+        font-size: 0.7rem;
+        color: var(--text-2);
+        letter-spacing: 0.05em;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav-links a {
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-2);
+        transition: color 0.25s ease, background 0.25s ease;
+      }
+      .nav-links a:hover { color: var(--text); background: var(--primary-soft); }
+      .nav-links a.active { color: var(--primary); background: var(--primary-soft); }
+
+      .nav-actions { display: flex; align-items: center; gap: 10px; }
+
+      .theme-toggle {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--text-2);
+        transition: all 0.25s ease;
+      }
+      .theme-toggle:hover { color: var(--primary); border-color: var(--line-strong); transform: rotate(12deg); }
+
+      .menu-toggle {
+        display: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        place-items: center;
+      }
+      .menu-toggle span {
+        display: block;
+        width: 17px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--text);
+        margin: 2px 0;
+        transition: transform 0.3s var(--ease), opacity 0.3s ease;
+      }
+      .menu-toggle.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+      .menu-toggle.open span:nth-child(2) { opacity: 0; }
+      .menu-toggle.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+      /* ============================================================
+         BUTTONS
+      ============================================================ */
+      .btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 26px;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 0.94rem;
+        letter-spacing: 0.01em;
+        transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), background 0.3s ease, border-color 0.3s ease;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        box-shadow: 0 14px 30px var(--glow);
+      }
+      .btn-primary::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.25) 50%, transparent 70%);
+        transform: translateX(-120%);
+        transition: transform 0.7s ease;
+      }
+      .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 40px var(--glow); }
+      .btn-primary:hover::after { transform: translateX(120%); }
+      .btn-primary:active { transform: translateY(0); }
+
+      .btn-ghost {
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+      }
+      .btn-ghost:hover { transform: translateY(-2px); border-color: var(--primary); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+      .btn-sm { padding: 10px 18px; font-size: 0.86rem; border-radius: 12px; }
+
+      /* ============================================================
+         HERO
+      ============================================================ */
+      .hero { padding: clamp(48px, 7vw, 88px) 0 clamp(40px, 5vw, 64px); }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+        gap: clamp(36px, 5vw, 64px);
+        align-items: center;
+      }
+      .hero-grid > * { min-width: 0; }
+      .ticker-wrap { max-width: 100%; }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--primary);
+        background: var(--primary-soft);
+        border: 1px solid var(--line);
+        margin-bottom: 22px;
+      }
+      .eyebrow .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: blink 1.8s ease-in-out infinite;
+      }
+      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+      .hero-title {
+        font-size: clamp(2.5rem, 5.4vw, 3.9rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .hero-title .grad {
+        background: linear-gradient(100deg, var(--primary) 10%, var(--electric) 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .hero-sub {
+        margin-top: 20px;
+        font-size: 1.08rem;
+        color: var(--text-2);
+        max-width: 540px;
+      }
+
+      .hero-points { margin-top: 26px; display: grid; gap: 12px; }
+      .hero-point {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        font-size: 0.94rem;
+        color: var(--text-2);
+      }
+      .hero-point svg { flex-shrink: 0; margin-top: 3px; color: var(--primary); }
+
+      .hero-cta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 14px; }
+
+      .hero-stats {
+        margin-top: 42px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        max-width: 520px;
+      }
+      .stat {
+        padding: 16px 18px;
+        border-radius: var(--r-md);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-sm);
+      }
+      .stat-value {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: -0.02em;
+      }
+      .stat-label { font-size: 0.76rem; color: var(--text-2); margin-top: 2px; }
+
+      /* ---------- Hero charging scene ---------- */
+      .hero-visual { position: relative; }
+
+      .scene {
+        position: relative;
+        border-radius: var(--r-xl);
+        border: 1px solid var(--line);
+        background: var(--scene-bg);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+      }
+
+      .scene svg { width: 100%; height: auto; }
+
+      .scene .st-screen-bg { fill: #0b241c; }
+      .scene .st-body { fill: var(--surface); stroke: var(--line-strong); }
+      .scene .ground-fill { fill: var(--scene-ground); }
+      .scene .car-paint { fill: var(--car-body); }
+      .scene .car-window { fill: var(--car-glass); }
+      .scene .cable-base { stroke: var(--primary-2); }
+
+      .cable-flow {
+        stroke: var(--electric);
+        stroke-dasharray: 10 18;
+        animation: cable-dash 1.1s linear infinite;
+        filter: drop-shadow(0 0 5px var(--glow));
+      }
+      @keyframes cable-dash { to { stroke-dashoffset: -28; } }
+
+      .energy-dot { fill: var(--electric); filter: drop-shadow(0 0 6px var(--electric)); }
+
+      .underglow {
+        fill: var(--electric);
+        opacity: 0.16;
+        animation: underglow 3s ease-in-out infinite;
+      }
+      @keyframes underglow { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.25; } }
+
+      .st-led {
+        fill: var(--electric);
+        animation: blink 1.6s ease-in-out infinite;
+        filter: drop-shadow(0 0 4px var(--electric));
+      }
+
+      .scene-chip {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 15px;
+        border-radius: 14px;
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-md);
+        font-size: 0.78rem;
+        font-weight: 600;
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-9px); }
+      }
+
+      .chip-kwh { top: 7%; left: 5%; }
+      .chip-kwh .big {
+        font-family: var(--font-display);
+        font-size: 1.18rem;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1.1;
+      }
+      .chip-kwh .small { font-size: 0.68rem; font-weight: 500; color: var(--text-2); }
+
+      .chip-status { top: 7%; right: 5%; animation-delay: 1.2s; }
+      .chip-status .pulse-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 0 var(--glow);
+        animation: loader-pulse 1.6s ease-out infinite;
+      }
+
+      .chip-batt {
+        bottom: 20%;
+        right: 6%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 7px;
+        min-width: 148px;
+        animation-delay: 0.6s;
+      }
+      .chip-batt-row { display: flex; justify-content: space-between; align-items: baseline; }
+      .chip-batt-row span { font-size: 0.68rem; font-weight: 500; color: var(--text-2); }
+      .chip-batt-row strong { font-family: var(--font-display); color: var(--primary); font-size: 1rem; }
+      .batt-track {
+        height: 7px;
+        border-radius: 6px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .batt-fill {
+        height: 100%;
+        width: 47%;
+        border-radius: 6px;
+        background: linear-gradient(90deg, var(--primary), var(--electric));
+        transition: width 0.5s linear;
+      }
+
+      /* ---------- Ticker ---------- */
+      .ticker-wrap {
+        margin-top: 18px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+        mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+      }
+      .ticker {
+        display: flex;
+        gap: 38px;
+        width: max-content;
+        padding: 12px 0;
+        animation: ticker-scroll 28s linear infinite;
+      }
+      .ticker-wrap:hover .ticker { animation-play-state: paused; }
+      @keyframes ticker-scroll { to { transform: translateX(-50%); } }
+      .tick {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        color: var(--text-2);
+        white-space: nowrap;
+      }
+      .tick strong { color: var(--text); font-weight: 600; }
+      .tick .td { width: 7px; height: 7px; border-radius: 50%; }
+      .td-g { background: var(--accent); }
+      .td-b { background: var(--blue); }
+      .td-a { background: var(--amber); }
+
+      /* ============================================================
+         PLATFORM SPOTLIGHT (highlighted section)
+      ============================================================ */
+      .platform-spotlight { padding-top: clamp(20px, 3.5vw, 40px); }
+
+      .spotlight-shell {
+        position: relative;
+        padding: clamp(32px, 5vw, 60px) clamp(20px, 4vw, 52px);
+        border-radius: calc(var(--r-xl) + 6px);
+        border: 1px solid var(--line-strong);
+        background: linear-gradient(165deg, var(--primary-soft), transparent 45%), var(--surface);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+      }
+      .spotlight-shell::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--electric), var(--blue), var(--primary));
+        background-size: 200% 100%;
+        animation: spotlight-sheen 6s linear infinite;
+      }
+      @keyframes spotlight-sheen { to { background-position: 200% 0; } }
+      .spotlight-shell::after {
+        content: "";
+        position: absolute;
+        top: -170px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 620px;
+        height: 340px;
+        background: radial-gradient(closest-side, var(--glow), transparent);
+        opacity: 0.55;
+        pointer-events: none;
+      }
+
+      .spotlight-head {
+        position: relative;
+        z-index: 1;
+        margin: 0 auto clamp(34px, 4.5vw, 48px);
+        max-width: 740px;
+        text-align: center;
+      }
+      .spotlight-head h2 { font-size: clamp(1.9rem, 3.9vw, 2.9rem); }
+      .spotlight-head .lede { margin-left: auto; margin-right: auto; }
+      .spotlight-head .kicker { justify-content: center; }
+      .spotlight-head .kicker::after {
+        content: "";
+        width: 22px;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--primary));
+      }
+
+      .start-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        box-shadow: 0 12px 26px var(--glow);
+        margin-bottom: 20px;
+      }
+      .start-badge .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fff;
+        animation: blink 1.6s ease-in-out infinite;
+      }
+
+      .spotlight-shell > :not(.spotlight-head) { position: relative; z-index: 1; }
+
+      /* ============================================================
+         PLATFORM ACCESS CARDS
+      ============================================================ */
+      .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 22px;
+      }
+
+      .access-card {
+        position: relative;
+        padding: 30px 28px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), border-color 0.3s ease;
+        overflow: hidden;
+      }
+      .access-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--card-accent, var(--primary)), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .access-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--line-strong);
+      }
+      .access-card:hover::before { opacity: 1; }
+
+      .ac-admin { --card-accent: var(--primary); }
+      .ac-driver { --card-accent: var(--blue); }
+      .ac-sim { --card-accent: var(--amber); }
+
+      .card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        color: var(--card-accent, var(--primary));
+        background: color-mix(in srgb, var(--card-accent, var(--primary)) 11%, transparent);
+        transition: transform 0.4s var(--ease);
+      }
+      .access-card:hover .card-icon { transform: scale(1.07) rotate(-4deg); }
+
+      .access-card p { color: var(--text-2); font-size: 0.92rem; flex-grow: 1; }
+
+      .card-url {
+        font-size: 0.74rem;
+        color: var(--text-2);
+        letter-spacing: 0.02em;
+      }
+
+      .sim-note {
+        margin-top: 26px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 20px 24px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        background: linear-gradient(120deg, var(--primary-soft), transparent 70%);
+        font-size: 0.92rem;
+        color: var(--text-2);
+      }
+      .sim-note svg { flex-shrink: 0; color: var(--primary); margin-top: 2px; }
+      .sim-note strong { color: var(--text); }
+
+      /* App download */
+      .app-row {
+        margin-top: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        padding: 26px 30px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+      .app-row p { color: var(--text-2); font-size: 0.92rem; margin-top: 4px; max-width: 460px; }
+      .app-badges { display: flex; gap: 12px; flex-wrap: wrap; }
+      .store-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border-radius: 13px;
+        background: var(--text);
+        color: var(--bg);
+        transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+      }
+      .store-badge:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+      .store-badge .sb-sub { display: block; font-size: 0.62rem; opacity: 0.75; line-height: 1.1; }
+      .store-badge .sb-main { display: block; font-size: 0.95rem; font-weight: 700; line-height: 1.25; }
+
+      /* ============================================================
+         FEATURE GRID (platform overview)
+      ============================================================ */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+      }
+      .feature-card {
+        padding: 26px 24px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), border-color 0.3s ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--line-strong);
+      }
+      .feature-card .card-icon { width: 44px; height: 44px; border-radius: 13px; margin-bottom: 16px; }
+      .feature-card h3 { font-size: 1.02rem; }
+      .feature-card p { margin-top: 9px; font-size: 0.88rem; color: var(--text-2); }
+
+      /* ============================================================
+         PRODUCT TABS
+      ============================================================ */
+      .tabs-layout {
+        display: grid;
+        grid-template-columns: 330px minmax(0, 1fr);
+        gap: 26px;
+        align-items: start;
+      }
+
+      .tab-list { display: grid; gap: 12px; }
+
+      .tab-btn {
+        text-align: left;
+        padding: 18px 20px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        transition: all 0.3s var(--ease);
+        position: relative;
+        overflow: hidden;
+      }
+      .tab-btn strong {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 0.98rem;
+        font-weight: 600;
+      }
+      .tab-btn span {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.8rem;
+        color: var(--text-2);
+        line-height: 1.5;
+      }
+      .tab-btn::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--primary), var(--accent));
+        transform: scaleY(0);
+        transition: transform 0.3s var(--ease);
+      }
+      .tab-btn:hover { border-color: var(--line-strong); transform: translateX(3px); }
+      .tab-btn.active {
+        border-color: var(--primary);
+        background: var(--primary-soft);
+        box-shadow: var(--shadow-sm);
+      }
+      .tab-btn.active::before { transform: scaleY(1); }
+
+      .tab-panel {
+        border-radius: var(--r-lg);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        padding: clamp(24px, 3.4vw, 40px);
+        box-shadow: var(--shadow-sm);
+        animation: panel-in 0.5s var(--ease);
+      }
+      @keyframes panel-in {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      .panel-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        gap: clamp(22px, 3vw, 38px);
+        align-items: center;
+      }
+      .panel-grid h3 { font-size: clamp(1.3rem, 2vw, 1.6rem); font-weight: 700; margin-top: 10px; }
+      .panel-grid > div > p { margin-top: 13px; color: var(--text-2); font-size: 0.95rem; }
+
+      .spec-grid {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .spec {
+        padding: 13px 16px;
+        border-radius: var(--r-sm);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+      }
+      .spec span {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--text-2);
+      }
+      .spec strong { font-size: 0.86rem; font-weight: 600; }
+
+      .panel-visual {
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        background: var(--surface-2);
+      }
+      .panel-visual svg { width: 100%; height: auto; }
+
+      /* ============================================================
+         SCENARIOS
+      ============================================================ */
+      .scenario-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+      }
+      .scenario-card {
+        padding: 26px 24px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), border-color 0.3s ease;
+      }
+      .scenario-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--line-strong); }
+      .scenario-card h3 { margin-top: 13px; font-size: 1.04rem; }
+      .scenario-card p { margin-top: 9px; font-size: 0.88rem; color: var(--text-2); flex-grow: 1; }
+
+      .tag {
+        align-self: flex-start;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--primary);
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--primary-soft);
+      }
+
+      .pill-row { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 7px; }
+      .pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-2);
+        padding: 5px 11px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+
+      /* ============================================================
+         WHY SIMULATE
+      ============================================================ */
+      .why-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      .why-card {
+        position: relative;
+        padding: 28px 26px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
+      }
+      .why-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+      .why-num {
+        font-family: var(--font-display);
+        font-size: 2.6rem;
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--primary), var(--electric));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        opacity: 0.85;
+      }
+      .why-card h3 { margin-top: 14px; }
+      .why-card p { margin-top: 10px; font-size: 0.9rem; color: var(--text-2); }
+
+      /* ============================================================
+         GALLERY
+      ============================================================ */
+      .gallery-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 36px;
+      }
+      .gallery-head .section-head { margin-bottom: 0; }
+
+      .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+      .filter-btn {
+        padding: 9px 18px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-2);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        transition: all 0.25s ease;
+      }
+      .filter-btn:hover { color: var(--primary); border-color: var(--primary); }
+      .filter-btn.active {
+        color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        border-color: transparent;
+        box-shadow: 0 8px 18px var(--glow);
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+      }
+      .g-card {
+        border-radius: var(--r-lg);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease), opacity 0.35s ease;
+      }
+      .g-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+      .g-card.hidden { display: none; }
+      .g-art { overflow: hidden; }
+      .g-art svg { width: 100%; height: auto; transition: transform 0.6s var(--ease); }
+      .g-card:hover .g-art svg { transform: scale(1.04); }
+      .g-copy { padding: 20px 24px 24px; }
+      .g-copy .tag { margin-bottom: 10px; }
+      .g-copy h3 { font-size: 1.06rem; }
+      .g-copy p { margin-top: 7px; font-size: 0.87rem; color: var(--text-2); }
+
+      /* ============================================================
+         STEPS
+      ============================================================ */
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        position: relative;
+      }
+      .step-card {
+        position: relative;
+        padding: 26px 24px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
+      }
+      .step-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+      .step-num {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        box-shadow: 0 8px 18px var(--glow);
+      }
+      .step-card h3 { margin-top: 16px; font-size: 1.02rem; }
+      .step-card p { margin-top: 9px; font-size: 0.88rem; color: var(--text-2); }
+      .step-card::after {
+        content: "";
+        position: absolute;
+        top: 46px;
+        right: -18px;
+        width: 18px;
+        height: 2px;
+        background: var(--line-strong);
+      }
+      .step-card:last-child::after { display: none; }
+
+      /* ============================================================
+         FAQ
+      ============================================================ */
+      .faq-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        gap: 26px;
+        align-items: start;
+      }
+      .faq-list { display: grid; gap: 12px; }
+      .faq-item {
+        border-radius: var(--r-md);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .faq-item.open { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+      .faq-q {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        text-align: left;
+        padding: 19px 22px;
+        font-weight: 600;
+        font-size: 0.96rem;
+      }
+      .faq-icon {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        color: var(--primary);
+        background: var(--primary-soft);
+        transition: transform 0.35s var(--ease);
+      }
+      .faq-item.open .faq-icon { transform: rotate(45deg); }
+      .faq-a {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.4s var(--ease);
+      }
+      .faq-item.open .faq-a { grid-template-rows: 1fr; }
+      .faq-a-inner { overflow: hidden; }
+      .faq-a-inner p {
+        padding: 0 22px 20px;
+        color: var(--text-2);
+        font-size: 0.92rem;
+      }
+
+      .faq-aside {
+        padding: 28px 26px;
+        border-radius: var(--r-lg);
+        border: 1px solid var(--line);
+        background: linear-gradient(160deg, var(--primary-soft), transparent 60%), var(--surface);
+        position: sticky;
+        top: 96px;
+      }
+      .faq-aside h3 { margin-top: 12px; font-size: 1.25rem; font-weight: 700; }
+      .faq-aside ul { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 11px; }
+      .faq-aside li {
+        display: flex;
+        gap: 10px;
+        font-size: 0.89rem;
+        color: var(--text-2);
+      }
+      .faq-aside li svg { flex-shrink: 0; margin-top: 4px; color: var(--primary); }
+
+      /* ============================================================
+         CONTACT
+      ============================================================ */
+      .contact-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+        gap: 26px;
+        align-items: start;
+      }
+      .contact-info, .contact-form-card {
+        padding: clamp(24px, 3vw, 34px);
+        border-radius: var(--r-lg);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+      }
+      .contact-info { background: linear-gradient(160deg, var(--primary-soft), transparent 65%), var(--surface); }
+      .contact-info h3 { font-size: 1.25rem; font-weight: 700; }
+      .contact-info p { margin-top: 13px; font-size: 0.92rem; color: var(--text-2); }
+
+      .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      form label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      input, select, textarea {
+        width: 100%;
+        margin-top: 7px;
+        padding: 13px 15px;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.9rem;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      }
+      input::placeholder, textarea::placeholder { color: var(--text-2); opacity: 0.65; }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px var(--primary-soft);
+      }
+      input.valid, select.valid, textarea.valid { border-color: var(--accent); }
+      input.invalid, select.invalid, textarea.invalid { border-color: #e05a5a; box-shadow: 0 0 0 4px rgba(224, 90, 90, 0.08); }
+      textarea { min-height: 120px; resize: vertical; }
+
+      .form-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+      .form-note { font-size: 0.78rem; color: var(--text-2); }
+      .form-status { font-size: 0.86rem; font-weight: 600; color: var(--primary); margin-top: 4px; }
+      .form-status.error { color: #e05a5a; }
+
+      .field-error {
+        display: none;
+        font-size: 0.74rem;
+        font-weight: 500;
+        color: #e05a5a;
+        margin-top: 5px;
+      }
+      label.has-error .field-error { display: block; }
+
+      .char-count {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: var(--text-2);
+        text-align: right;
+        margin-top: 4px;
+      }
+      .char-count.limit { color: #e05a5a; }
+
+      .checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 18px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--text-2);
+        cursor: pointer;
+      }
+      .checkbox-row input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        margin: 2px 0 0;
+        accent-color: var(--primary);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* Honeypot: visually hidden from humans, present for bots */
+      .hp-field {
+        position: absolute !important;
+        left: -9999px !important;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .btn.loading { pointer-events: none; opacity: 0.85; }
+      .btn .btn-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        animation: spin 0.7s linear infinite;
+      }
+      .btn.loading .btn-spinner { display: inline-block; }
+      .btn.loading .btn-label-icon { display: none; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ============================================================
+         FOOTER
+      ============================================================ */
+      .footer {
+        margin-top: 30px;
+        border-top: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .footer-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 0.8fr));
+        gap: 32px;
+        padding: clamp(44px, 6vw, 64px) 0 36px;
+      }
+      .footer-brand p {
+        margin-top: 14px;
+        font-size: 0.88rem;
+        color: var(--text-2);
+        max-width: 320px;
+      }
+      .footer-col h4 {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-2);
+        margin-bottom: 16px;
+      }
+      .footer-col a {
+        display: block;
+        font-size: 0.89rem;
+        color: var(--text-2);
+        padding: 5px 0;
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+      .footer-col a:hover { color: var(--primary); transform: translateX(3px); }
+      .footer-bottom {
+        border-top: 1px solid var(--line);
+        padding: 20px 0 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+        color: var(--text-2);
+      }
+
+      /* ============================================================
+         MODAL
+      ============================================================ */
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 160;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(7, 15, 12, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .modal.open { opacity: 1; visibility: visible; }
+      .modal-card {
+        position: relative;
+        width: min(860px, 100%);
+        border-radius: var(--r-xl);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        transform: translateY(20px) scale(0.97);
+        transition: transform 0.4s var(--ease);
+      }
+      .modal.open .modal-card { transform: none; }
+      .modal-visual { background: var(--surface-2); display: grid; align-content: center; }
+      .modal-visual svg { width: 100%; height: auto; }
+      .modal-body { padding: 34px 30px; }
+      .modal-body h3 { margin-top: 12px; font-size: 1.3rem; font-weight: 700; }
+      .modal-body p { margin-top: 13px; font-size: 0.92rem; color: var(--text-2); }
+      .modal-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--text-2);
+        transition: all 0.25s ease;
+        z-index: 2;
+      }
+      .modal-close:hover { color: var(--primary); transform: rotate(90deg); }
+
+      /* ============================================================
+         RESPONSIVE
+      ============================================================ */
+      @media (max-width: 1080px) {
+        .hero-grid { grid-template-columns: minmax(0, 1fr); }
+        .hero-visual { order: -1; }
+        .platform-grid, .why-grid { grid-template-columns: 1fr 1fr; }
+        .feature-grid, .scenario-grid, .steps { grid-template-columns: 1fr 1fr; }
+        .step-card::after { display: none; }
+        .tabs-layout { grid-template-columns: 1fr; }
+        .tab-list { grid-template-columns: 1fr 1fr; }
+        .faq-layout, .contact-grid { grid-template-columns: 1fr; }
+        .faq-aside { position: static; }
+        .footer-grid { grid-template-columns: 1fr 1fr; }
+        .nav-links {
+          position: absolute;
+          top: 72px;
+          left: 0;
+          right: 0;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 4px;
+          padding: 16px 24px 22px;
+          background: var(--glass);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border-bottom: 1px solid var(--line);
+          box-shadow: var(--shadow-md);
+          transform: translateY(-12px);
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.35s var(--ease);
+        }
+        .nav-links.open { transform: none; opacity: 1; visibility: visible; }
+        .menu-toggle { display: grid; }
+        .header-cta { display: none; }
+        .modal-card { grid-template-columns: 1fr; max-height: 88vh; overflow-y: auto; }
+      }
+
+      @media (max-width: 620px) {
+        .container { width: calc(100% - 32px); }
+        .platform-grid, .feature-grid, .scenario-grid, .steps, .why-grid,
+        .gallery-grid, .tab-list, .field-grid, .footer-grid { grid-template-columns: 1fr; }
+        .hero-stats { grid-template-columns: 1fr 1fr; }
+        .hero-cta .btn { flex: 1; }
+        .scene-chip { padding: 8px 11px; }
+        .chip-batt { min-width: 124px; }
+      }
+
+      /* ============================================================
+         REDUCED MOTION
+      ============================================================ */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        html { scroll-behavior: auto; }
+        [data-reveal] { opacity: 1; transform: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader" id="loader">
+      <div class="loader-bolt">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"/></svg>
+      </div>
+    </div>
+
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <button class="to-top" id="to-top" aria-label="Back to top">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+
+    <header class="site-header" id="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="ElectraHub home">
+          <span class="brand-mark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"/></svg>
+          </span>
+          <span class="brand-text">
+            <strong>ElectraHub</strong>
+            <span>EV CHARGING PLATFORM</span>
+          </span>
+        </a>
+
+        <nav class="nav-links" id="nav-links" aria-label="Primary">
+          <a href="#platform">Platform</a>
+          <a href="#products">Products</a>
+          <a href="#solutions">Solutions</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="nav-actions">
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
+            <svg id="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+            <svg id="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+          </button>
+          <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+          <a class="btn btn-primary btn-sm header-cta" href="#platform">Try the Platform</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ================= HERO ================= -->
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy" data-reveal>
+            <span class="eyebrow"><span class="dot"></span> Live platform &middot; No hardware required</span>
+            <h1 class="hero-title">Experience EV charging <span class="grad">before you deploy.</span></h1>
+            <p class="hero-sub">
+              ElectraHub lets you run a complete charging operation in simulation — start sessions, manage
+              stations, and track energy flow through our OCPP simulator. When you're ready, the same
+              platform connects to real chargers with zero code changes.
+            </p>
+            <div class="hero-points">
+              <div class="hero-point">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Launch the OCPP Simulator and run a full charging session in minutes
+              </div>
+              <div class="hero-point">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Find stations, start sessions, and pay with the Driver App on iOS and Android
+              </div>
+              <div class="hero-point">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Monitor sessions, revenue, and charger health from the Admin Portal
+              </div>
+              <div class="hero-point">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Go live by pointing real OCPP chargers at the same endpoint
+              </div>
+            </div>
+            <div class="hero-cta">
+              <a class="btn btn-primary" href="#platform">
+                Try the Platform
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </a>
+              <a class="btn btn-ghost" href="#products">Explore Products</a>
+            </div>
+            <div class="hero-stats">
+              <div class="stat">
+                <div class="stat-value"><span data-count="99.7" data-decimals="1">0</span>%</div>
+                <div class="stat-label">Uptime design target</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value"><span data-count="320">0</span> kW</div>
+                <div class="stat-label">Max DC charge rate</div>
+              </div>
+              <div class="stat">
+                <div class="stat-value">OCPP 2.0.1</div>
+                <div class="stat-label">And 1.6J compliant</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual" data-reveal data-reveal-delay="1">
+            <div class="scene" aria-label="Animated illustration of an electric car charging at an ElectraHub station">
+              <svg viewBox="0 0 640 400" role="img" aria-hidden="true">
+                <!-- distant shapes -->
+                <rect x="470" y="180" width="90" height="150" rx="10" class="ground-fill" opacity="0.45" />
+                <rect x="560" y="220" width="60" height="110" rx="8" class="ground-fill" opacity="0.3" />
+                <circle cx="560" cy="70" r="26" fill="var(--accent)" opacity="0.18" />
+
+                <!-- ground -->
+                <rect x="0" y="330" width="640" height="70" class="ground-fill" />
+                <ellipse cx="113" cy="334" rx="58" ry="7" fill="rgba(0,0,0,0.08)" />
+                <ellipse cx="415" cy="334" rx="185" ry="9" fill="rgba(0,0,0,0.08)" />
+
+                <!-- underglow -->
+                <ellipse cx="415" cy="328" rx="180" ry="12" class="underglow" />
+
+                <!-- charging station -->
+                <rect x="70" y="118" width="86" height="214" rx="16" class="st-body" stroke-width="1.5" />
+                <rect x="84" y="138" width="58" height="48" rx="9" class="st-screen-bg" />
+                <text id="scene-pct" x="113" y="164" text-anchor="middle" fill="#2adfa5" font-family="Sora, sans-serif" font-size="16" font-weight="700">47%</text>
+                <text x="113" y="178" text-anchor="middle" fill="#6fcfae" font-family="Inter, sans-serif" font-size="7" letter-spacing="1.5">CHARGING</text>
+                <rect x="84" y="198" width="58" height="4" rx="2" class="st-led" />
+                <rect x="92" y="214" width="42" height="5" rx="2.5" fill="var(--primary)" opacity="0.5" />
+                <rect x="92" y="226" width="28" height="5" rx="2.5" fill="var(--primary)" opacity="0.3" />
+                <rect x="140" y="246" width="18" height="30" rx="7" fill="var(--primary-2)" />
+
+                <!-- cable -->
+                <path id="cable-path" d="M152 260 C 210 268, 198 300, 262 254" fill="none" stroke="none" />
+                <path d="M152 260 C 210 268, 198 300, 262 254" fill="none" class="cable-base" stroke-width="7" stroke-linecap="round" />
+                <path d="M152 260 C 210 268, 198 300, 262 254" fill="none" class="cable-flow" stroke-width="3" stroke-linecap="round" />
+                <circle r="4" class="energy-dot">
+                  <animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#cable-path"/></animateMotion>
+                </circle>
+                <circle r="3" class="energy-dot" opacity="0.7">
+                  <animateMotion dur="1.8s" begin="0.9s" repeatCount="indefinite"><mpath href="#cable-path"/></animateMotion>
+                </circle>
+
+                <!-- car -->
+                <g>
+                  <path d="M300 258 L329 213 Q337 200 356 200 H472 Q491 200 499 213 L528 258 Z" class="car-paint" />
+                  <rect x="250" y="252" width="330" height="66" rx="26" class="car-paint" />
+                  <path d="M313 252 L336 215 Q341 207 352 207 H408 V252 Z" class="car-window" />
+                  <path d="M421 252 V207 H470 Q481 207 486 215 L509 252 Z" class="car-window" />
+                  <rect x="252" y="266" width="11" height="15" rx="4" fill="#ffe9b0" />
+                  <rect x="568" y="266" width="10" height="15" rx="4" fill="#ff9b86" />
+                  <rect x="262" y="246" width="16" height="11" rx="4" fill="var(--accent)" />
+                  <line x1="416" y1="258" x2="416" y2="306" stroke="rgba(0,0,0,0.18)" stroke-width="2" />
+                  <rect x="300" y="290" width="232" height="4" rx="2" fill="rgba(255,255,255,0.07)" />
+                  <circle cx="322" cy="318" r="27" fill="#101815" />
+                  <circle cx="322" cy="318" r="12" fill="#39463f" />
+                  <circle cx="322" cy="318" r="4" fill="#5e6f66" />
+                  <circle cx="510" cy="318" r="27" fill="#101815" />
+                  <circle cx="510" cy="318" r="12" fill="#39463f" />
+                  <circle cx="510" cy="318" r="4" fill="#5e6f66" />
+                </g>
+              </svg>
+
+              <div class="scene-chip chip-kwh">
+                <div>
+                  <div class="big"><span id="kwh-counter">0.0</span> kWh</div>
+                  <div class="small">Energy delivered</div>
+                </div>
+              </div>
+
+              <div class="scene-chip chip-status">
+                <span class="pulse-dot"></span> 3 / 3 stations active
+              </div>
+
+              <div class="scene-chip chip-batt">
+                <div class="chip-batt-row">
+                  <span>Battery</span>
+                  <strong id="batt-pct">47%</strong>
+                </div>
+                <div class="batt-track"><div class="batt-fill" id="batt-fill"></div></div>
+              </div>
+            </div>
+
+            <div class="ticker-wrap" aria-hidden="true">
+              <div class="ticker">
+                <span class="tick"><span class="td td-g"></span> Station A1 &mdash; <strong>22 kW</strong> &middot; Session active</span>
+                <span class="tick"><span class="td td-b"></span> Station B3 &mdash; <strong>150 kW</strong> &middot; 47% complete</span>
+                <span class="tick"><span class="td td-a"></span> OCPP Sim &mdash; <strong>Virtual</strong> &middot; Test session</span>
+                <span class="tick"><span class="td td-g"></span> Revenue today &mdash; <strong>$247.80</strong></span>
+                <span class="tick"><span class="td td-b"></span> Network uptime &mdash; <strong>99.7%</strong></span>
+                <span class="tick"><span class="td td-g"></span> Station A1 &mdash; <strong>22 kW</strong> &middot; Session active</span>
+                <span class="tick"><span class="td td-b"></span> Station B3 &mdash; <strong>150 kW</strong> &middot; 47% complete</span>
+                <span class="tick"><span class="td td-a"></span> OCPP Sim &mdash; <strong>Virtual</strong> &middot; Test session</span>
+                <span class="tick"><span class="td td-g"></span> Revenue today &mdash; <strong>$247.80</strong></span>
+                <span class="tick"><span class="td td-b"></span> Network uptime &mdash; <strong>99.7%</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PLATFORM ================= -->
+      <section class="section platform-spotlight" id="platform" data-reveal>
+        <div class="container">
+          <div class="spotlight-shell">
+          <div class="section-head spotlight-head">
+            <span class="start-badge"><span class="dot"></span> Start here</span>
+            <div class="kicker">Try the platform</div>
+            <h2>Simulated EV charging, <span class="grad" style="background: linear-gradient(100deg, var(--primary) 10%, var(--electric) 90%); -webkit-background-clip: text; background-clip: text; color: transparent;">end to end.</span></h2>
+            <p class="lede">
+              No hardware required. Create virtual chargers with the OCPP Simulator, start sessions from
+              the Driver Portal, and monitor everything in the Admin Portal — the same platform that runs
+              real OCPP-compliant chargers in production.
+            </p>
+          </div>
+
+          <div class="platform-grid">
+            <article class="access-card ac-admin" data-reveal data-reveal-delay="1">
+              <div class="card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+              </div>
+              <h3>Admin Portal</h3>
+              <p>
+                The command center for your network. Manage stations, monitor live sessions, configure
+                tariffs, review revenue analytics, and handle driver accounts.
+              </p>
+              <a class="btn btn-primary btn-sm" href="https://electrahub.net/admin-portal" target="_blank" rel="noopener">
+                Open Admin Portal
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+              </a>
+              <span class="card-url">electrahub.net/admin-portal</span>
+            </article>
+
+            <article class="access-card ac-driver" data-reveal data-reveal-delay="2">
+              <div class="card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg>
+              </div>
+              <h3>Driver Portal</h3>
+              <p>
+                The driver-facing web app. Find nearby stations, start and stop sessions, view history,
+                manage payments, and track energy usage from any browser.
+              </p>
+              <a class="btn btn-primary btn-sm" href="https://electrahub.net/driver-portal" target="_blank" rel="noopener" style="background: linear-gradient(135deg, #2f7df6, #5b9bf8); box-shadow: 0 14px 30px rgba(47, 125, 246, 0.28);">
+                Open Driver Portal
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+              </a>
+              <span class="card-url">electrahub.net/driver-portal</span>
+            </article>
+
+            <article class="access-card ac-sim" data-reveal data-reveal-delay="3">
+              <div class="card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"/></svg>
+              </div>
+              <h3>OCPP Simulator</h3>
+              <p>
+                Create virtual OCPP chargers and simulate plug-in events, energy delivery, and the full
+                session lifecycle — the entire charging flow without physical hardware.
+              </p>
+              <a class="btn btn-primary btn-sm" href="https://electrahub.net/ocpp-simulator" target="_blank" rel="noopener" style="background: linear-gradient(135deg, #e89a14, #f4b942); box-shadow: 0 14px 30px rgba(240, 168, 41, 0.28);">
+                Launch Simulator
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+              </a>
+              <span class="card-url">electrahub.net/ocpp-simulator</span>
+            </article>
+          </div>
+
+          <div class="sim-note" data-reveal>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span>
+              <strong>Simulator-first by design.</strong> Every feature works with virtual chargers today and
+              real OCPP-compliant hardware tomorrow. No code changes — point your charger at our OCPP
+              endpoint and go live.
+            </span>
+          </div>
+
+          <div class="app-row" data-reveal>
+            <div>
+              <h3>Get the Driver App</h3>
+              <p>Find stations, start charging sessions, view receipts, and manage your account on the go.</p>
+            </div>
+            <div class="app-badges">
+              <a class="store-badge" href="#" rel="noopener" aria-label="Download on the App Store">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span><span class="sb-sub">Download on the</span><span class="sb-main">App Store</span></span>
+              </a>
+              <a class="store-badge" href="#" rel="noopener" aria-label="Get it on Google Play">
+                <svg width="20" height="22" viewBox="0 0 22 24" fill="currentColor"><path d="M1.22 0.27C0.94 0.56 0.78 1.03 0.78 1.64v20.72c0 0.61 0.16 1.08 0.44 1.37l0.07 0.07L12.8 12.29v-0.28L1.29 0.2zM16.64 16.14l-3.84-3.85v-0.28l3.84-3.85 0.09 0.05 4.55 2.58c1.3 0.74 1.3 1.95 0 2.69l-4.55 2.58zM16.73 16.09L12.8 12.15 1.29 23.8c0.43 0.45 1.13 0.51 1.94 0.05l13.5-7.76M16.73 8.21L3.23 0.45C2.42-0.01 1.72 0.05 1.29 0.5l11.51 11.65z"/></svg>
+                <span><span class="sb-sub">Get it on</span><span class="sb-main">Google Play</span></span>
+              </a>
+            </div>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SOLUTIONS ================= -->
+      <section class="section" id="solutions" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">Platform overview</div>
+            <h2>One platform for every charging scenario.</h2>
+            <p class="lede">
+              From hotels to highway corridors to fleet depots, ElectraHub brings hardware selection,
+              software configuration, and operations into a single workspace. Simulate first, deploy with confidence.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card" data-reveal data-reveal-delay="1">
+              <div class="card-icon" style="--card-accent: var(--primary);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"/></svg>
+              </div>
+              <h3>Public charging</h3>
+              <p>DC fast chargers for highway corridors, retail forecourts, and urban hubs where drivers expect speed and uptime.</p>
+            </article>
+            <article class="feature-card" data-reveal data-reveal-delay="2">
+              <div class="card-icon" style="--card-accent: var(--blue);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01"/></svg>
+              </div>
+              <h3>Destination charging</h3>
+              <p>AC charging for hotels, workplaces, retail, and residential properties where vehicles park for hours.</p>
+            </article>
+            <article class="feature-card" data-reveal data-reveal-delay="3">
+              <div class="card-icon" style="--card-accent: var(--amber);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="15" height="12" rx="2"/><path d="M16 10h4l3 3v5h-7M5.5 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18.5 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+              </div>
+              <h3>Fleet management</h3>
+              <p>Depot scheduling, load balancing, and departure readiness for commercial and municipal fleets.</p>
+            </article>
+            <article class="feature-card" data-reveal data-reveal-delay="4">
+              <div class="card-icon" style="--card-accent: var(--accent);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+              </div>
+              <h3>Operator software</h3>
+              <p>Monitoring, diagnostics, tariff management, and performance reporting across your entire network.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PRODUCTS ================= -->
+      <section class="section" id="products" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">Product suite</div>
+            <h2>Match the right charger to the site, the dwell time, and the business model.</h2>
+          </div>
+
+          <div class="tabs-layout">
+            <div class="tab-list" role="tablist" aria-label="Product categories">
+              <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-pulse" id="trigger-pulse" data-tab-target="tab-pulse">
+                <strong>Pulse AC</strong>
+                <span>Level 2 destination charging for hotels, offices, multifamily, and long-dwell parking.</span>
+              </button>
+              <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-vector" id="trigger-vector" data-tab-target="tab-vector">
+                <strong>Vector DC</strong>
+                <span>DC fast charging for highway corridors, forecourts, and high-turnover public sites.</span>
+              </button>
+              <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-depot" id="trigger-depot" data-tab-target="tab-depot">
+                <strong>Depot Command</strong>
+                <span>Fleet charge scheduling with load balancing, departure windows, and energy controls.</span>
+              </button>
+              <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-orbit" id="trigger-orbit" data-tab-target="tab-orbit">
+                <strong>Orbit Cloud</strong>
+                <span>OCPP network management with monitoring, tariffs, diagnostics, and uptime reporting.</span>
+              </button>
+            </div>
+
+            <div>
+              <article class="tab-panel" id="tab-pulse" role="tabpanel" aria-labelledby="trigger-pulse">
+                <div class="panel-grid">
+                  <div>
+                    <div class="kicker">Destination charging</div>
+                    <h3>Quiet, reliable Level 2 charging where vehicles park for hours.</h3>
+                    <p>
+                      Pulse AC is built for environments where charging happens in the background — hotels,
+                      offices, apartments, and retail. Drivers plug in on arrival and return to a charged
+                      vehicle. Simulate session patterns and energy loads before installation.
+                    </p>
+                    <div class="spec-grid">
+                      <div class="spec"><span>Power range</span><strong>7.4 – 22 kW</strong></div>
+                      <div class="spec"><span>Best for</span><strong>Long-dwell destinations</strong></div>
+                      <div class="spec"><span>Access models</span><strong>Guest, app, RFID, tenant</strong></div>
+                      <div class="spec"><span>Design focus</span><strong>Low-friction daily use</strong></div>
+                    </div>
+                  </div>
+                  <div class="panel-visual">
+                    <svg viewBox="0 0 420 300" aria-hidden="true">
+                      <rect width="420" height="300" fill="var(--surface-2)" />
+                      <rect x="0" y="225" width="420" height="75" fill="var(--scene-ground)" />
+                      <rect x="170" y="58" width="84" height="170" rx="18" fill="var(--surface)" stroke="var(--line-strong)" />
+                      <rect x="184" y="76" width="56" height="36" rx="9" fill="#0b241c" />
+                      <text x="212" y="99" text-anchor="middle" fill="#2adfa5" font-family="Sora, sans-serif" font-size="13" font-weight="700">22 kW</text>
+                      <rect x="188" y="126" width="48" height="8" rx="4" fill="var(--primary)" opacity="0.6" />
+                      <rect x="188" y="142" width="32" height="8" rx="4" fill="var(--primary)" opacity="0.3" />
+                      <path d="M254 116 C 312 118, 338 150, 348 226" fill="none" stroke="var(--primary-2)" stroke-width="9" stroke-linecap="round" />
+                      <rect x="340" y="218" width="17" height="28" rx="8" fill="var(--primary-2)" />
+                      <circle cx="96" cy="244" r="16" fill="var(--accent)" opacity="0.3" />
+                      <circle cx="310" cy="250" r="14" fill="var(--amber)" opacity="0.3" />
+                    </svg>
+                  </div>
+                </div>
+              </article>
+
+              <article class="tab-panel" id="tab-vector" role="tabpanel" aria-labelledby="trigger-vector" hidden>
+                <div class="panel-grid">
+                  <div>
+                    <div class="kicker">Public fast charging</div>
+                    <h3>DC fast charging built for high-traffic, high-turnover locations.</h3>
+                    <p>
+                      Vector DC delivers 60–320 kW at highway rest stops, fuel stations, retail plazas, and
+                      urban hubs. Drivers charge in 15–45 minutes. Test queue flow, pricing models, and
+                      peak-hour scenarios in simulation before your site goes live.
+                    </p>
+                    <div class="spec-grid">
+                      <div class="spec"><span>Power range</span><strong>60 – 320 kW</strong></div>
+                      <div class="spec"><span>Best for</span><strong>Quick-turn public sites</strong></div>
+                      <div class="spec"><span>Session options</span><strong>Tap, roaming, app, guest</strong></div>
+                      <div class="spec"><span>Design focus</span><strong>Throughput and uptime</strong></div>
+                    </div>
+                  </div>
+                  <div class="panel-visual">
+                    <svg viewBox="0 0 420 300" aria-hidden="true">
+                      <rect width="420" height="300" fill="var(--surface-2)" />
+                      <rect x="0" y="230" width="420" height="70" fill="var(--scene-ground)" />
+                      <rect x="150" y="36" width="112" height="196" rx="20" fill="var(--primary-2)" />
+                      <rect x="172" y="58" width="68" height="46" rx="11" fill="#0b241c" />
+                      <text x="206" y="86" text-anchor="middle" fill="#2adfa5" font-family="Sora, sans-serif" font-size="15" font-weight="700">320 kW</text>
+                      <rect x="172" y="120" width="54" height="8" rx="4" fill="#ffffff" opacity="0.55" />
+                      <rect x="172" y="136" width="38" height="8" rx="4" fill="#ffffff" opacity="0.3" />
+                      <path d="M262 126 C 320 128, 348 158, 358 232" fill="none" stroke="var(--amber)" stroke-width="10" stroke-linecap="round" />
+                      <rect x="350" y="224" width="18" height="30" rx="8" fill="var(--amber)" />
+                      <circle cx="84" cy="250" r="15" fill="var(--accent)" opacity="0.3" />
+                    </svg>
+                  </div>
+                </div>
+              </article>
+
+              <article class="tab-panel" id="tab-depot" role="tabpanel" aria-labelledby="trigger-depot" hidden>
+                <div class="panel-grid">
+                  <div>
+                    <div class="kicker">Fleet orchestration</div>
+                    <h3>Every vehicle charged and ready when the shift starts.</h3>
+                    <p>
+                      Depot Command manages charging queues, energy budgets, and departure schedules across
+                      mixed AC/DC depots. Simulate overnight cycles, test load-balancing rules, and validate
+                      dispatch windows before commissioning a single charger.
+                    </p>
+                    <div class="spec-grid">
+                      <div class="spec"><span>Use case</span><strong>Commercial &amp; municipal fleets</strong></div>
+                      <div class="spec"><span>Controls</span><strong>Queueing, balancing, scheduling</strong></div>
+                      <div class="spec"><span>Deployment</span><strong>Mixed AC and DC depots</strong></div>
+                      <div class="spec"><span>Design focus</span><strong>Departure readiness</strong></div>
+                    </div>
+                  </div>
+                  <div class="panel-visual">
+                    <svg viewBox="0 0 420 300" aria-hidden="true">
+                      <rect width="420" height="300" fill="var(--surface-2)" />
+                      <rect x="28" y="30" width="364" height="240" rx="22" fill="var(--surface)" stroke="var(--line)" />
+                      <rect x="48" y="52" width="156" height="86" rx="14" fill="var(--primary-soft)" />
+                      <rect x="220" y="52" width="152" height="86" rx="14" fill="var(--primary-soft)" />
+                      <rect x="48" y="156" width="324" height="92" rx="16" fill="var(--primary-soft)" opacity="0.6" />
+                      <path d="M74 216 C 112 178, 148 182, 180 208 S 248 238, 344 184" fill="none" stroke="var(--primary)" stroke-width="7" stroke-linecap="round" />
+                      <rect x="76" y="84" width="16" height="34" rx="7" fill="var(--primary)" />
+                      <rect x="104" y="72" width="16" height="46" rx="7" fill="var(--primary)" opacity="0.7" />
+                      <rect x="132" y="62" width="16" height="56" rx="7" fill="var(--primary)" opacity="0.4" />
+                      <text x="296" y="86" text-anchor="middle" fill="var(--text-2)" font-family="Inter, sans-serif" font-size="13">Ready to run</text>
+                      <text x="296" y="116" text-anchor="middle" fill="var(--primary)" font-family="Sora, sans-serif" font-size="24" font-weight="700">18 / 20</text>
+                    </svg>
+                  </div>
+                </div>
+              </article>
+
+              <article class="tab-panel" id="tab-orbit" role="tabpanel" aria-labelledby="trigger-orbit" hidden>
+                <div class="panel-grid">
+                  <div>
+                    <div class="kicker">Operator software</div>
+                    <h3>Monitor, manage, and optimize your entire charging network.</h3>
+                    <p>
+                      Orbit Cloud is the OCPP-compliant management layer for your charger portfolio. Set
+                      tariffs, monitor uptime, receive diagnostic alerts, run remote firmware updates, and
+                      generate revenue reports — with OCPI roaming and payment integrations built in.
+                    </p>
+                    <div class="spec-grid">
+                      <div class="spec"><span>Functions</span><strong>Monitor, alert, price, report</strong></div>
+                      <div class="spec"><span>Integrations</span><strong>OCPP, OCPI, payments</strong></div>
+                      <div class="spec"><span>Best for</span><strong>Operators &amp; network teams</strong></div>
+                      <div class="spec"><span>Design focus</span><strong>Uptime and visibility</strong></div>
+                    </div>
+                  </div>
+                  <div class="panel-visual">
+                    <svg viewBox="0 0 420 300" aria-hidden="true">
+                      <rect width="420" height="300" fill="var(--surface-2)" />
+                      <rect x="28" y="24" width="364" height="252" rx="22" fill="var(--surface)" stroke="var(--line)" />
+                      <rect x="50" y="46" width="320" height="24" rx="12" fill="var(--primary-soft)" />
+                      <circle cx="70" cy="58" r="5" fill="var(--amber)" />
+                      <circle cx="88" cy="58" r="5" fill="var(--accent)" />
+                      <circle cx="106" cy="58" r="5" fill="var(--primary)" />
+                      <rect x="50" y="88" width="128" height="92" rx="14" fill="var(--primary-soft)" />
+                      <rect x="194" y="88" width="176" height="40" rx="12" fill="var(--primary-soft)" opacity="0.7" />
+                      <rect x="194" y="140" width="176" height="40" rx="12" fill="var(--primary-soft)" opacity="0.5" />
+                      <rect x="50" y="198" width="320" height="58" rx="14" fill="var(--primary-soft)" opacity="0.5" />
+                      <path d="M68 234 C 108 202, 156 206, 192 226 S 262 246, 352 192" fill="none" stroke="var(--primary)" stroke-width="6" stroke-linecap="round" />
+                      <text x="114" y="124" text-anchor="middle" fill="var(--text-2)" font-family="Inter, sans-serif" font-size="12">Uptime</text>
+                      <text x="114" y="156" text-anchor="middle" fill="var(--primary)" font-family="Sora, sans-serif" font-size="25" font-weight="700">99.7%</text>
+                    </svg>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SCENARIOS ================= -->
+      <section class="section" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">Deployment scenarios</div>
+            <h2>The right charging model for every property type.</h2>
+            <p class="lede">
+              Each site has different dwell times, driver expectations, and energy constraints.
+              ElectraHub helps you model the business case before procurement begins.
+            </p>
+          </div>
+
+          <div class="scenario-grid">
+            <article class="scenario-card" data-reveal data-reveal-delay="1">
+              <span class="tag">Hospitality</span>
+              <h3>Hotels &amp; mixed-use properties</h3>
+              <p>Overnight AC charging as a guest amenity. Simulate occupancy-based load patterns and access models before rollout.</p>
+              <div class="pill-row"><span class="pill">Level 2 AC</span><span class="pill">Guest access</span></div>
+            </article>
+            <article class="scenario-card" data-reveal data-reveal-delay="2">
+              <span class="tag">Retail &amp; public</span>
+              <h3>Forecourts &amp; urban hubs</h3>
+              <p>DC fast charging for high-traffic locations. Model session throughput, pricing tiers, and peak demand scenarios.</p>
+              <div class="pill-row"><span class="pill">Level 3 DC</span><span class="pill">Tap-to-charge</span></div>
+            </article>
+            <article class="scenario-card" data-reveal data-reveal-delay="3">
+              <span class="tag">Fleet</span>
+              <h3>Commercial depots</h3>
+              <p>Scheduled overnight and opportunity charging for delivery, transit, and municipal fleets. Test energy budgets in advance.</p>
+              <div class="pill-row"><span class="pill">Smart scheduling</span><span class="pill">Load balancing</span></div>
+            </article>
+            <article class="scenario-card" data-reveal data-reveal-delay="4">
+              <span class="tag">Network ops</span>
+              <h3>Multi-site management</h3>
+              <p>Centralized OCPP monitoring, remote diagnostics, firmware management, and revenue tracking across all locations.</p>
+              <div class="pill-row"><span class="pill">OCPP 1.6 / 2.0.1</span><span class="pill">OCPI roaming</span></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= WHY SIMULATE ================= -->
+      <section class="section" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">Why simulate first</div>
+            <h2>Validate every layer before a single charger ships.</h2>
+            <p class="lede">
+              Test driver flows, energy economics, and operational readiness in parallel —
+              reducing risk and accelerating time to revenue.
+            </p>
+          </div>
+
+          <div class="why-grid">
+            <article class="why-card" data-reveal data-reveal-delay="1">
+              <div class="why-num">01</div>
+              <h3>Driver experience simulation</h3>
+              <p>Walk the full charging journey — discovery, authentication, session monitoring, and payment — in a simulated environment.</p>
+            </article>
+            <article class="why-card" data-reveal data-reveal-delay="2">
+              <div class="why-num">02</div>
+              <h3>Energy &amp; cost modeling</h3>
+              <p>Model kWh consumption, time-of-use pricing, demand charges, and utilization rates to validate unit economics before deployment.</p>
+            </article>
+            <article class="why-card" data-reveal data-reveal-delay="3">
+              <div class="why-num">03</div>
+              <h3>Operational readiness</h3>
+              <p>Test OCPP connectivity, alert routing, firmware workflows, and remote troubleshooting before your network goes live.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= GALLERY ================= -->
+      <section class="section" id="gallery" data-reveal>
+        <div class="container">
+          <div class="gallery-head">
+            <div class="section-head">
+              <div class="kicker">Concepts</div>
+              <h2>Charging environments and platform views.</h2>
+              <p class="lede">Explore how ElectraHub adapts to different site types and operating models.</p>
+            </div>
+            <div class="filters" role="group" aria-label="Filter gallery">
+              <button class="filter-btn active" type="button" data-filter="all">All</button>
+              <button class="filter-btn" type="button" data-filter="destination">Destination</button>
+              <button class="filter-btn" type="button" data-filter="public">Public fast</button>
+              <button class="filter-btn" type="button" data-filter="fleet">Fleet</button>
+              <button class="filter-btn" type="button" data-filter="software">Software</button>
+            </div>
+          </div>
+
+          <div class="gallery-grid">
+            <article class="g-card" data-category="destination"
+              data-title="Premium courtyard charging" data-tag="Destination"
+              data-copy="A hospitality and mixed-use concept built for longer dwell sessions, guest charging, and a cleaner arrival experience.">
+              <div class="g-art">
+                <svg viewBox="0 0 560 320" aria-hidden="true">
+                  <rect width="560" height="320" fill="var(--surface-2)" />
+                  <rect x="0" y="240" width="560" height="80" fill="var(--scene-ground)" />
+                  <rect x="336" y="84" width="92" height="146" rx="18" fill="var(--surface)" stroke="var(--line-strong)" />
+                  <rect x="354" y="104" width="56" height="32" rx="9" fill="#0b241c" />
+                  <text x="382" y="125" text-anchor="middle" fill="#2adfa5" font-family="Sora, sans-serif" font-size="12" font-weight="700">82%</text>
+                  <path d="M428 140 C 480 142, 502 168, 514 240" fill="none" stroke="var(--primary-2)" stroke-width="9" stroke-linecap="round" />
+                  <rect x="506" y="232" width="17" height="28" rx="8" fill="var(--primary-2)" />
+                  <rect x="58" y="62" width="208" height="118" rx="20" fill="var(--primary-soft)" />
+                  <rect x="86" y="100" width="150" height="10" rx="5" fill="var(--primary)" opacity="0.8" />
+                  <rect x="86" y="122" width="96" height="10" rx="5" fill="var(--primary)" opacity="0.4" />
+                  <circle cx="120" cy="262" r="16" fill="var(--accent)" opacity="0.3" />
+                  <circle cx="448" cy="268" r="16" fill="var(--amber)" opacity="0.3" />
+                </svg>
+              </div>
+              <div class="g-copy">
+                <span class="tag">Destination</span>
+                <h3>Premium courtyard charging</h3>
+                <p>Quiet AC charging for hotels, multifamily, and mixed-use environments.</p>
+              </div>
+            </article>
+
+            <article class="g-card" data-category="public"
+              data-title="Retail fast-charge island" data-tag="Public fast"
+              data-copy="A public fast charging concept for visible retail sites, roadside stops, and quick-turn charging demand.">
+              <div class="g-art">
+                <svg viewBox="0 0 560 320" aria-hidden="true">
+                  <rect width="560" height="320" fill="var(--surface-2)" />
+                  <rect x="0" y="248" width="560" height="72" fill="var(--scene-ground)" />
+                  <rect x="226" y="42" width="116" height="190" rx="20" fill="var(--primary-2)" />
+                  <rect x="248" y="64" width="72" height="44" rx="11" fill="#0b241c" />
+                  <text x="284" y="91" text-anchor="middle" fill="#2adfa5" font-family="Sora, sans-serif" font-size="14" font-weight="700">320 kW</text>
+                  <rect x="248" y="124" width="58" height="9" rx="4.5" fill="#ffffff" opacity="0.5" />
+                  <rect x="248" y="142" width="40" height="9" rx="4.5" fill="#ffffff" opacity="0.3" />
+                  <path d="M342 132 C 402 134, 432 166, 446 248" fill="none" stroke="var(--amber)" stroke-width="10" stroke-linecap="round" />
+                  <rect x="438" y="240" width="18" height="30" rx="8" fill="var(--amber)" />
+                  <circle cx="96" cy="270" r="15" fill="var(--accent)" opacity="0.3" />
+                </svg>
+              </div>
+              <div class="g-copy">
+                <span class="tag">Public fast</span>
+                <h3>Retail fast-charge island</h3>
+                <p>High-speed charging shaped for visible public sites and shorter dwell times.</p>
+              </div>
+            </article>
+
+            <article class="g-card" data-category="fleet"
+              data-title="Fleet depot energy wall" data-tag="Fleet"
+              data-copy="A depot operations concept designed around charge queueing, dispatch readiness, and energy balancing.">
+              <div class="g-art">
+                <svg viewBox="0 0 560 320" aria-hidden="true">
+                  <rect width="560" height="320" fill="var(--surface-2)" />
+                  <rect x="44" y="30" width="472" height="260" rx="24" fill="var(--surface)" stroke="var(--line)" />
+                  <rect x="72" y="56" width="196" height="92" rx="16" fill="var(--primary-soft)" />
+                  <rect x="290" y="56" width="198" height="92" rx="16" fill="var(--primary-soft)" opacity="0.7" />
+                  <rect x="72" y="168" width="416" height="98" rx="18" fill="var(--primary-soft)" opacity="0.5" />
+                  <path d="M100 230 C 156 188, 208 192, 252 222 S 338 252, 460 196" fill="none" stroke="var(--primary)" stroke-width="7" stroke-linecap="round" />
+                  <text x="389" y="98" text-anchor="middle" fill="var(--text-2)" font-family="Inter, sans-serif" font-size="13">Ready to run</text>
+                  <text x="389" y="128" text-anchor="middle" fill="var(--primary)" font-family="Sora, sans-serif" font-size="23" font-weight="700">18 / 20</text>
+                  <rect x="100" y="86" width="17" height="38" rx="7" fill="var(--primary)" />
+                  <rect x="130" y="74" width="17" height="50" rx="7" fill="var(--primary)" opacity="0.7" />
+                  <rect x="160" y="64" width="17" height="60" rx="7" fill="var(--primary)" opacity="0.4" />
+                </svg>
+              </div>
+              <div class="g-copy">
+                <span class="tag">Fleet</span>
+                <h3>Fleet depot energy wall</h3>
+                <p>Charging control for dispatch-driven environments where departure readiness matters.</p>
+              </div>
+            </article>
+
+            <article class="g-card" data-category="software"
+              data-title="Operator control dashboard" data-tag="Software"
+              data-copy="A software layer for monitoring, pricing, uptime visibility, and issue triage across charger portfolios.">
+              <div class="g-art">
+                <svg viewBox="0 0 560 320" aria-hidden="true">
+                  <rect width="560" height="320" fill="var(--surface-2)" />
+                  <rect x="44" y="26" width="472" height="268" rx="24" fill="var(--surface)" stroke="var(--line)" />
+                  <rect x="70" y="48" width="420" height="26" rx="13" fill="var(--primary-soft)" />
+                  <circle cx="92" cy="61" r="5" fill="var(--amber)" />
+                  <circle cx="110" cy="61" r="5" fill="var(--accent)" />
+                  <circle cx="128" cy="61" r="5" fill="var(--primary)" />
+                  <rect x="70" y="94" width="170" height="98" rx="16" fill="var(--primary-soft)" />
+                  <rect x="258" y="94" width="232" height="44" rx="13" fill="var(--primary-soft)" opacity="0.7" />
+                  <rect x="258" y="148" width="232" height="44" rx="13" fill="var(--primary-soft)" opacity="0.5" />
+                  <rect x="70" y="212" width="420" height="58" rx="15" fill="var(--primary-soft)" opacity="0.5" />
+                  <path d="M92 248 C 140 216, 196 220, 236 238 S 318 256, 466 206" fill="none" stroke="var(--primary)" stroke-width="6" stroke-linecap="round" />
+                  <text x="155" y="132" text-anchor="middle" fill="var(--text-2)" font-family="Inter, sans-serif" font-size="13">Uptime</text>
+                  <text x="155" y="166" text-anchor="middle" fill="var(--primary)" font-family="Sora, sans-serif" font-size="26" font-weight="700">99.7%</text>
+                </svg>
+              </div>
+              <div class="g-copy">
+                <span class="tag">Software</span>
+                <h3>Operator control dashboard</h3>
+                <p>One place for alerts, diagnostics, tariffs, uptime, and portfolio performance.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HOW IT WORKS ================= -->
+      <section class="section" id="how-it-works" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">How it works</div>
+            <h2>From simulation to live operations in four steps.</h2>
+          </div>
+
+          <div class="steps">
+            <article class="step-card" data-reveal data-reveal-delay="1">
+              <div class="step-num">1</div>
+              <h3>Configure your site</h3>
+              <p>Define the property type, electrical capacity, charger mix, and access model for your location.</p>
+            </article>
+            <article class="step-card" data-reveal data-reveal-delay="2">
+              <div class="step-num">2</div>
+              <h3>Simulate charging flows</h3>
+              <p>Run driver sessions, energy loads, tariff scenarios, and fleet schedules in the simulation environment.</p>
+            </article>
+            <article class="step-card" data-reveal data-reveal-delay="3">
+              <div class="step-num">3</div>
+              <h3>Commission and launch</h3>
+              <p>Connect physical chargers via OCPP, apply your validated configuration, and go live with confidence.</p>
+            </article>
+            <article class="step-card" data-reveal data-reveal-delay="4">
+              <div class="step-num">4</div>
+              <h3>Monitor and optimize</h3>
+              <p>Track uptime, session data, revenue, and energy costs. Use real data to refine operations over time.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FAQ ================= -->
+      <section class="section" id="faq" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">FAQ</div>
+            <h2>Common questions about the platform.</h2>
+          </div>
+
+          <div class="faq-layout">
+            <div class="faq-list">
+              <article class="faq-item open">
+                <button class="faq-q" type="button" aria-expanded="true">
+                  Can one platform support both destination charging and public fast charging?
+                  <span class="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                  <p>Yes. ElectraHub supports mixed charger portfolios while keeping monitoring, pricing, access, and operations in one platform.</p>
+                </div></div>
+              </article>
+              <article class="faq-item">
+                <button class="faq-q" type="button" aria-expanded="false">
+                  How does the OCPP simulator relate to a real deployment?
+                  <span class="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                  <p>The simulator speaks the same OCPP protocol as physical chargers. Everything you validate in simulation — sessions, tariffs, alerts, reporting — carries over unchanged when you connect real hardware to the same endpoint.</p>
+                </div></div>
+              </article>
+              <article class="faq-item">
+                <button class="faq-q" type="button" aria-expanded="false">
+                  How is fleet charging different from public charging?
+                  <span class="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                  <p>Fleet charging is built around departure readiness and controlled energy windows. Public charging is built around access, pricing, visibility, and throughput.</p>
+                </div></div>
+              </article>
+              <article class="faq-item">
+                <button class="faq-q" type="button" aria-expanded="false">
+                  Why keep a software layer visible instead of focusing only on hardware?
+                  <span class="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                  <p>Hardware gets a site live. Software keeps it usable, measurable, and supportable. Monitoring, remote actions, tariffs, diagnostics, and reporting are core product value.</p>
+                </div></div>
+              </article>
+            </div>
+
+            <aside class="faq-aside">
+              <div class="kicker">Built for</div>
+              <h3>Deployment teams that need clarity from day one.</h3>
+              <ul>
+                <li>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Site planning across hospitality, retail, workplace, multifamily, and depots
+                </li>
+                <li>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Mixed AC and DC portfolios with one operations layer
+                </li>
+                <li>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Network monitoring, diagnostics, pricing, and reporting after launch
+                </li>
+                <li>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Teams managing uptime, driver experience, and long-term utilization
+                </li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONTACT ================= -->
+      <section class="section" id="contact" data-reveal>
+        <div class="container">
+          <div class="section-head">
+            <div class="kicker">Contact</div>
+            <h2>Talk through your next charging project.</h2>
+            <p class="lede">Share the site type, charging model, and rollout goal — we'll map the right product mix for the site.</p>
+          </div>
+
+          <div class="contact-grid">
+            <aside class="contact-info" data-reveal data-reveal-delay="1">
+              <h3>What to bring</h3>
+              <p>
+                The most useful starting inputs are property type, expected charger count, public versus
+                private access, and whether the business case is destination charging, fast charging,
+                fleet charging, or a mixed portfolio.
+              </p>
+              <div class="pill-row">
+                <span class="pill">Destination charging</span>
+                <span class="pill">Public DC fast</span>
+                <span class="pill">Fleet depots</span>
+                <span class="pill">Software operations</span>
+              </div>
+            </aside>
+
+            <div class="contact-form-card" data-reveal data-reveal-delay="2">
+              <form id="contact-form" novalidate>
+                <div class="field-grid">
+                  <label>Name
+                    <input type="text" name="name" placeholder="Avery Brooks" required minlength="2" maxlength="120" autocomplete="name" />
+                    <small class="field-error"></small>
+                  </label>
+                  <label>Work email
+                    <input type="email" name="email" placeholder="avery@company.com" required maxlength="180" autocomplete="email" />
+                    <small class="field-error"></small>
+                  </label>
+                </div>
+                <div class="field-grid">
+                  <label>Company <span style="font-weight:400; color:var(--text-2);">(optional)</span>
+                    <input type="text" name="company" placeholder="Northline Properties" maxlength="180" autocomplete="organization" />
+                    <small class="field-error"></small>
+                  </label>
+                  <label>Phone <span style="font-weight:400; color:var(--text-2);">(optional)</span>
+                    <input type="tel" name="phone" placeholder="+1 555 123 4567" maxlength="40" autocomplete="tel" />
+                    <small class="field-error"></small>
+                  </label>
+                </div>
+                <label>Site type
+                  <select name="siteType" required>
+                    <option value="">Select a site type</option>
+                    <option>Destination charging</option>
+                    <option>Public DC fast charging</option>
+                    <option>Fleet depot</option>
+                    <option>Operator software</option>
+                    <option>Mixed charging portfolio</option>
+                  </select>
+                  <small class="field-error"></small>
+                </label>
+                <label>Project brief
+                  <textarea name="brief" placeholder="We are planning a two-phase rollout and want help shaping the AC/DC mix, software layer, and operating model for the site." required minlength="10" maxlength="4000"></textarea>
+                  <div class="char-count" id="brief-count">0 / 4000</div>
+                  <small class="field-error"></small>
+                </label>
+
+                <!-- Honeypot: humans never see or fill this -->
+                <div class="hp-field" aria-hidden="true">
+                  <label>Website
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" />
+                  </label>
+                </div>
+
+                <label class="checkbox-row">
+                  <input type="checkbox" name="marketingConsent" />
+                  <span>Keep me informed about ElectraHub product updates and charging industry insights.</span>
+                </label>
+
+                <div class="form-row">
+                  <button class="btn btn-primary" type="submit" id="submit-btn">
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    Send project brief
+                    <svg class="btn-label-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                  </button>
+                  <div>
+                    <div class="form-note">We'll use this information to follow up on product fit and rollout scope.</div>
+                    <div id="form-status" class="form-status" aria-live="polite" role="status"></div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href="#top">
+              <span class="brand-mark">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"/></svg>
+              </span>
+              <span class="brand-text"><strong>ElectraHub</strong></span>
+            </a>
+            <p>Destination, public fast, fleet, and operator software — one EV charging platform from simulation to production.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Platform</h4>
+            <a href="https://electrahub.net/admin-portal" target="_blank" rel="noopener">Admin Portal</a>
+            <a href="https://electrahub.net/driver-portal" target="_blank" rel="noopener">Driver Portal</a>
+            <a href="https://electrahub.net/ocpp-simulator" target="_blank" rel="noopener">OCPP Simulator</a>
+          </div>
+          <div class="footer-col">
+            <h4>Products</h4>
+            <a href="#products">Pulse AC</a>
+            <a href="#products">Vector DC</a>
+            <a href="#products">Depot Command</a>
+            <a href="#products">Orbit Cloud</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="#solutions">Solutions</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Contact</a>
+            <a href="/org-page/terms.html">Terms &amp; Conditions</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; <span id="year">2026</span> ElectraHub. All rights reserved.</span>
+          <span>OCPP 1.6J &middot; OCPP 2.0.1 &middot; OCPI</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ================= GALLERY MODAL ================= -->
+    <div class="modal" id="gallery-modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <button class="modal-close" type="button" aria-label="Close detail">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <div class="modal-visual" id="modal-visual"></div>
+        <div class="modal-body">
+          <span class="tag" id="modal-tag">Detail</span>
+          <h3 id="modal-title">Charging concept</h3>
+          <p id="modal-copy"></p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ===== Loader ===== */
+      window.addEventListener("load", () => {
+        const loader = document.getElementById("loader");
+        setTimeout(() => loader.classList.add("hidden"), 350);
+        setTimeout(() => loader.remove(), 950);
+      });
+
+      /* ===== Scroll: progress bar, header, to-top, active nav ===== */
+      const progressBar = document.getElementById("progress-bar");
+      const header = document.getElementById("site-header");
+      const toTop = document.getElementById("to-top");
+      const navAnchors = document.querySelectorAll(".nav-links a[href^='#']");
+      const sections = document.querySelectorAll("section[id]");
+
+      const onScroll = () => {
+        const y = window.scrollY;
+        const docH = document.documentElement.scrollHeight - window.innerHeight;
+        progressBar.style.width = (docH > 0 ? (y / docH) * 100 : 0) + "%";
+        header.classList.toggle("scrolled", y > 24);
+        toTop.classList.toggle("visible", y > 640);
+
+        const pos = y + 130;
+        sections.forEach((sec) => {
+          if (pos >= sec.offsetTop && pos < sec.offsetTop + sec.offsetHeight) {
+            navAnchors.forEach((a) =>
+              a.classList.toggle("active", a.getAttribute("href") === "#" + sec.id)
+            );
+          }
+        });
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+      /* ===== Mobile menu ===== */
+      const menuToggle = document.getElementById("menu-toggle");
+      const navLinks = document.getElementById("nav-links");
+      menuToggle.addEventListener("click", () => {
+        const open = navLinks.classList.toggle("open");
+        menuToggle.classList.toggle("open", open);
+        menuToggle.setAttribute("aria-expanded", String(open));
+      });
+      navAnchors.forEach((a) =>
+        a.addEventListener("click", () => {
+          navLinks.classList.remove("open");
+          menuToggle.classList.remove("open");
+        })
+      );
+
+      /* ===== Theme ===== */
+      const themeToggle = document.getElementById("theme-toggle");
+      const iconSun = document.getElementById("icon-sun");
+      const iconMoon = document.getElementById("icon-moon");
+      const saved = localStorage.getItem("eh-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      const setTheme = (dark) => {
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        iconSun.style.display = dark ? "none" : "block";
+        iconMoon.style.display = dark ? "block" : "none";
+        localStorage.setItem("eh-theme", dark ? "dark" : "light");
+      };
+      setTheme(saved === "dark" || (!saved && prefersDark));
+      themeToggle.addEventListener("click", () =>
+        setTheme(document.documentElement.getAttribute("data-theme") !== "dark")
+      );
+
+      /* ===== Reveal on scroll ===== */
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("revealed");
+              revealObserver.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      );
+      document.querySelectorAll("[data-reveal]").forEach((el) => revealObserver.observe(el));
+
+      /* ===== Counters ===== */
+      const counterObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            const target = parseFloat(el.dataset.count || "0");
+            const decimals = parseInt(el.dataset.decimals || "0", 10);
+            const t0 = performance.now();
+            const dur = 1400;
+            const step = (now) => {
+              const p = Math.min((now - t0) / dur, 1);
+              const eased = 1 - Math.pow(1 - p, 3);
+              el.textContent = (target * eased).toFixed(decimals);
+              if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+            counterObserver.unobserve(el);
+          });
+        },
+        { threshold: 0.6 }
+      );
+      document.querySelectorAll("[data-count]").forEach((el) => counterObserver.observe(el));
+
+      /* ===== Hero scene: battery + kWh ===== */
+      (() => {
+        const pctScreen = document.getElementById("scene-pct");
+        const battPct = document.getElementById("batt-pct");
+        const battFill = document.getElementById("batt-fill");
+        const kwh = document.getElementById("kwh-counter");
+        if (!pctScreen) return;
+        let charge = 47;
+        let energy = 12.4;
+        setInterval(() => {
+          charge += 0.18;
+          if (charge >= 100) charge = 8;
+          energy = (energy + 0.05) % 1000;
+          const c = Math.round(charge) + "%";
+          pctScreen.textContent = c;
+          battPct.textContent = c;
+          battFill.style.width = charge + "%";
+          kwh.textContent = energy.toFixed(1);
+        }, 120);
+      })();
+
+      /* ===== Product tabs ===== */
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+      tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tabBtns.forEach((b) => {
+            const sel = b === btn;
+            b.classList.toggle("active", sel);
+            b.setAttribute("aria-selected", String(sel));
+          });
+          tabPanels.forEach((p) => (p.hidden = p.id !== btn.dataset.tabTarget));
+        });
+      });
+
+      /* ===== Gallery filter ===== */
+      const filterBtns = document.querySelectorAll(".filter-btn");
+      const gCards = document.querySelectorAll(".g-card");
+      filterBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          filterBtns.forEach((b) => b.classList.toggle("active", b === btn));
+          const f = btn.dataset.filter;
+          gCards.forEach((card, i) => {
+            const show = f === "all" || card.dataset.category === f;
+            if (!show) {
+              card.style.opacity = "0";
+              card.style.transform = "scale(0.96)";
+              setTimeout(() => card.classList.add("hidden"), 220);
+            } else {
+              card.classList.remove("hidden");
+              card.style.opacity = "0";
+              card.style.transform = "scale(0.96)";
+              setTimeout(() => {
+                card.style.opacity = "1";
+                card.style.transform = "";
+              }, 60 + i * 70);
+            }
+          });
+        });
+      });
+
+      /* ===== Gallery modal ===== */
+      const modal = document.getElementById("gallery-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalTag = document.getElementById("modal-tag");
+      const modalCopy = document.getElementById("modal-copy");
+      const modalVisual = document.getElementById("modal-visual");
+
+      const closeModal = () => {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      };
+      gCards.forEach((card) => {
+        card.addEventListener("click", () => {
+          modalTitle.textContent = card.dataset.title || "Charging concept";
+          modalTag.textContent = card.dataset.tag || "Detail";
+          modalCopy.textContent = card.dataset.copy || "";
+          modalVisual.innerHTML = card.querySelector(".g-art").innerHTML;
+          modal.classList.add("open");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+        });
+      });
+      modal.querySelector(".modal-close").addEventListener("click", closeModal);
+      modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+      /* ===== FAQ accordion ===== */
+      document.querySelectorAll(".faq-q").forEach((q) => {
+        q.addEventListener("click", () => {
+          const item = q.closest(".faq-item");
+          const wasOpen = item.classList.contains("open");
+          document.querySelectorAll(".faq-item").forEach((i) => {
+            i.classList.remove("open");
+            i.querySelector(".faq-q").setAttribute("aria-expanded", "false");
+          });
+          if (!wasOpen) {
+            item.classList.add("open");
+            q.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      /* ===== Contact form (POST /notifications/api/v1/public/contact-inquiries) ===== */
+      const CONTACT_API = "/notifications/api/v1/public/contact-inquiries";
+      const SOURCE_PAGE = "org-page-contact";
+      const form = document.getElementById("contact-form");
+      const formStatus = document.getElementById("form-status");
+      const submitBtn = document.getElementById("submit-btn");
+      const briefField = form.elements.brief;
+      const briefCount = document.getElementById("brief-count");
+
+      /* --- client-side rules mirroring the API contract --- */
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      const PHONE_RE = /^\+?[0-9 ().\-]{0,39}$/; /* permissive, E.164-friendly */
+      const validators = {
+        name: (v) => {
+          if (!v) return "Name is required.";
+          if (v.length < 2 || v.length > 120) return "Name must be 2–120 characters.";
+          return "";
+        },
+        email: (v) => {
+          if (!v) return "Work email is required.";
+          if (v.length > 180) return "Email must be 180 characters or fewer.";
+          if (!EMAIL_RE.test(v)) return "Enter a valid email address.";
+          return "";
+        },
+        company: (v) => (v.length > 180 ? "Company must be 180 characters or fewer." : ""),
+        phone: (v) => (v && !PHONE_RE.test(v) ? "Enter a valid phone number (e.g. +1 555 123 4567)." : ""),
+        siteType: (v) => (!v ? "Select a site type." : ""),
+        brief: (v) => {
+          if (!v) return "Project brief is required.";
+          if (v.length < 10) return "Brief must be at least 10 characters.";
+          if (v.length > 4000) return "Brief must be 4000 characters or fewer.";
+          return "";
+        },
+      };
+
+      const setFieldState = (field, error) => {
+        const label = field.closest("label");
+        field.classList.toggle("invalid", !!error);
+        field.classList.toggle("valid", !error && !!field.value.trim());
+        if (label) {
+          label.classList.toggle("has-error", !!error);
+          const msg = label.querySelector(".field-error");
+          if (msg) msg.textContent = error || "";
+        }
+      };
+
+      const validateField = (field) => {
+        const rule = validators[field.name];
+        if (!rule) return "";
+        const error = rule(field.value.trim());
+        setFieldState(field, error);
+        return error;
+      };
+
+      form.querySelectorAll("input:not([name='website']):not([type='checkbox']), select, textarea").forEach((f) => {
+        f.addEventListener("blur", () => validateField(f));
+        f.addEventListener("input", () => {
+          if (f.classList.contains("invalid")) validateField(f);
+        });
+      });
+
+      /* brief character counter */
+      const updateCount = () => {
+        const len = briefField.value.length;
+        briefCount.textContent = `${len} / 4000`;
+        briefCount.classList.toggle("limit", len > 4000 || (len > 0 && len < 10));
+      };
+      briefField.addEventListener("input", updateCount);
+      updateCount();
+
+      /* helpers */
+      const newRequestId = () =>
+        (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : "req-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+
+      const utmParams = (() => {
+        const q = new URLSearchParams(window.location.search);
+        const out = {};
+        ["utmSource", "utmMedium", "utmCampaign"].forEach((key) => {
+          const v = q.get(key.replace(/([A-Z])/g, "_$1").toLowerCase()); /* utm_source etc. */
+          if (v) out[key] = v;
+        });
+        return out;
+      })();
+
+      const setStatus = (msg, isError) => {
+        formStatus.textContent = msg;
+        formStatus.classList.toggle("error", !!isError);
+      };
+
+      const setLoading = (on) => {
+        submitBtn.classList.toggle("loading", on);
+        submitBtn.disabled = on;
+      };
+
+      let lastSubmitAt = 0;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        /* validate everything */
+        let firstInvalid = null;
+        form.querySelectorAll("input:not([name='website']):not([type='checkbox']), select, textarea").forEach((f) => {
+          if (validateField(f) && !firstInvalid) firstInvalid = f;
+        });
+        if (firstInvalid) {
+          setStatus("Please fix the highlighted fields.", true);
+          firstInvalid.focus();
+          return;
+        }
+
+        /* soft client-side rate limit: API allows 1 req/sec */
+        if (Date.now() - lastSubmitAt < 1100) {
+          setStatus("One moment — please try again in a second.", true);
+          return;
+        }
+        lastSubmitAt = Date.now();
+
+        const data = new FormData(form);
+        const payload = {
+          name: data.get("name").toString().trim(),
+          email: data.get("email").toString().trim(),
+          siteType: data.get("siteType").toString(),
+          brief: data.get("brief").toString().trim(),
+          sourcePage: SOURCE_PAGE,
+          marketingConsent: data.get("marketingConsent") === "on",
+          honeypot: (data.get("website") || "").toString(),
+          ...utmParams,
+        };
+        const company = (data.get("company") || "").toString().trim();
+        const phone = (data.get("phone") || "").toString().trim();
+        if (company) payload.company = company;
+        if (phone) payload.phone = phone;
+
+        setLoading(true);
+        setStatus("Sending your project brief…", false);
+
+        try {
+          const res = await fetch(CONTACT_API, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-Id": newRequestId(),
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.status === 202) {
+            let body = {};
+            try { body = await res.json(); } catch (_) { /* tolerate empty body */ }
+            const ref = body.referenceId ? ` Reference: ${body.referenceId}.` : "";
+            setStatus(
+              (body.message || `Thanks ${payload.name} — we received your project brief and will follow up shortly.`) + ref,
+              false
+            );
+            form.querySelectorAll(".valid, .invalid").forEach((f) => f.classList.remove("valid", "invalid"));
+            form.reset();
+            updateCount();
+          } else if (res.status === 400) {
+            let body = {};
+            try { body = await res.json(); } catch (_) {}
+            setStatus(body.message || "Some fields look invalid. Please review and try again.", true);
+          } else if (res.status === 429) {
+            setStatus("You're sending requests too quickly. Please wait a moment and try again.", true);
+          } else if (res.status === 409) {
+            setStatus("This brief looks like a duplicate of one we already received.", true);
+          } else {
+            setStatus("Something went wrong on our side. Please try again shortly.", true);
+          }
+        } catch (err) {
+          setStatus("Network error — please check your connection and try again.", true);
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      /* ===== Footer year ===== */
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
