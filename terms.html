@@ -556,6 +556,33 @@
                 this site are intended as general marketing and informational material. They may describe future features,
                 reference conceptual workflows, or simplify technical details for readability.
               </p>
+              <div class="legal-points">
+                <div class="legal-point">
+                  <strong>Admin Portal</strong>
+                  <span>
+                    A web-based dashboard for charge point operators to manage stations, monitor sessions,
+                    configure pricing, and view analytics. Available at
+                    <a href="https://admin-portal.electrahub.net" data-app-link="admin" data-app-url-label="admin" style="color:var(--primary-strong);font-weight:600;">admin-portal.electrahub.net</a>.
+                  </span>
+                </div>
+                <div class="legal-point">
+                  <strong>Driver Portal &amp; Mobile Apps</strong>
+                  <span>
+                    A consumer-facing interface for EV drivers to locate chargers, start/stop sessions,
+                    view charging history, and manage payment methods. Available at
+                    <a href="https://driver-portal.electrahub.net" data-app-link="driver" data-app-url-label="driver" style="color:var(--primary-strong);font-weight:600;">driver-portal.electrahub.net</a>
+                    and as iOS and Android apps.
+                  </span>
+                </div>
+                <div class="legal-point">
+                  <strong>OCPP Simulator</strong>
+                  <span>
+                    A virtual charging environment that simulates real OCPP-compliant charge points, enabling
+                    you to experience the full platform without physical hardware. Available at
+                    <a href="https://ocpp-simulator.electrahub.net" data-app-link="simulator" data-app-url-label="simulator" style="color:var(--primary-strong);font-weight:600;">ocpp-simulator.electrahub.net</a>.
+                  </span>
+                </div>
+              </div>
               <div class="callout">
                 Final scope, commercial terms, charger specifications, compatibility, uptime commitments, and deployment
                 responsibilities must be confirmed in written proposals, statements of work, or signed customer
@@ -623,5 +650,37 @@
         </div>
       </footer>
     </div>
+    <script>
+      (() => {
+        const host = window.location.hostname.toLowerCase();
+        const isDev = host === "dev.electrahub.net" || host.endsWith(".dev.electrahub.net");
+        const defaults = isDev
+          ? {
+              admin: "https://admin-portal-dev.electrahub.net",
+              driver: "https://driver-portal-dev.electrahub.net",
+              simulator: "https://ocpp-simulator-dev.electrahub.net",
+            }
+          : {
+              admin: "https://admin-portal.electrahub.net",
+              driver: "https://driver-portal.electrahub.net",
+              simulator: "https://ocpp-simulator.electrahub.net",
+            };
+        const links = { ...defaults, ...(window.ELECTRAHUB_APP_URLS || {}) };
+
+        document.querySelectorAll("[data-app-link]").forEach((anchor) => {
+          const key = anchor.getAttribute("data-app-link");
+          if (links[key]) {
+            anchor.href = links[key];
+          }
+        });
+
+        document.querySelectorAll("[data-app-url-label]").forEach((label) => {
+          const key = label.getAttribute("data-app-url-label");
+          if (links[key]) {
+            label.textContent = new URL(links[key]).hostname;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

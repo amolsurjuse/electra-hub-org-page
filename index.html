@@ -1694,11 +1694,11 @@
                 The command center for your network. Manage stations, monitor live sessions, configure
                 tariffs, review revenue analytics, and handle driver accounts.
               </p>
-              <a class="btn btn-primary btn-sm" href="https://electrahub.net/admin-portal" target="_blank" rel="noopener">
+              <a class="btn btn-primary btn-sm" href="https://admin-portal.electrahub.net" target="_blank" rel="noopener" data-app-link="admin">
                 Open Admin Portal
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"></path></svg>
               </a>
-              <span class="card-url">electrahub.net/admin-portal</span>
+              <span class="card-url" data-app-url-label="admin">admin-portal.electrahub.net</span>
             </article>
 
             <article class="access-card ac-driver" data-reveal="" data-reveal-delay="2">
@@ -1710,11 +1710,11 @@
                 The driver-facing web app. Find nearby stations, start and stop sessions, view history,
                 manage payments, and track energy usage from any browser.
               </p>
-              <a class="btn btn-primary btn-sm" href="https://electrahub.net/driver-portal" target="_blank" rel="noopener" style="background: linear-gradient(135deg, #2f7df6, #5b9bf8); box-shadow: 0 14px 30px rgba(47, 125, 246, 0.28);">
+              <a class="btn btn-primary btn-sm" href="https://driver-portal.electrahub.net" target="_blank" rel="noopener" data-app-link="driver" style="background: linear-gradient(135deg, #2f7df6, #5b9bf8); box-shadow: 0 14px 30px rgba(47, 125, 246, 0.28);">
                 Open Driver Portal
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"></path></svg>
               </a>
-              <span class="card-url">electrahub.net/driver-portal</span>
+              <span class="card-url" data-app-url-label="driver">driver-portal.electrahub.net</span>
             </article>
 
             <article class="access-card ac-sim" data-reveal="" data-reveal-delay="3">
@@ -1726,11 +1726,11 @@
                 Create virtual OCPP chargers and simulate plug-in events, energy delivery, and the full
                 session lifecycle — the entire charging flow without physical hardware.
               </p>
-              <a class="btn btn-primary btn-sm" href="https://electrahub.net/ocpp-simulator" target="_blank" rel="noopener" style="background: linear-gradient(135deg, #e89a14, #f4b942); box-shadow: 0 14px 30px rgba(240, 168, 41, 0.28);">
+              <a class="btn btn-primary btn-sm" href="https://ocpp-simulator.electrahub.net" target="_blank" rel="noopener" data-app-link="simulator" style="background: linear-gradient(135deg, #e89a14, #f4b942); box-shadow: 0 14px 30px rgba(240, 168, 41, 0.28);">
                 Launch Simulator
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H8M17 7v9"></path></svg>
               </a>
-              <span class="card-url">electrahub.net/ocpp-simulator</span>
+              <span class="card-url" data-app-url-label="simulator">ocpp-simulator.electrahub.net</span>
             </article>
           </div>
 
@@ -2387,9 +2387,9 @@
           </div>
           <div class="footer-col">
             <h4>Platform</h4>
-            <a href="https://electrahub.net/admin-portal" target="_blank" rel="noopener">Admin Portal</a>
-            <a href="https://electrahub.net/driver-portal" target="_blank" rel="noopener">Driver Portal</a>
-            <a href="https://electrahub.net/ocpp-simulator" target="_blank" rel="noopener">OCPP Simulator</a>
+            <a href="https://admin-portal.electrahub.net" target="_blank" rel="noopener" data-app-link="admin">Admin Portal</a>
+            <a href="https://driver-portal.electrahub.net" target="_blank" rel="noopener" data-app-link="driver">Driver Portal</a>
+            <a href="https://ocpp-simulator.electrahub.net" target="_blank" rel="noopener" data-app-link="simulator">OCPP Simulator</a>
           </div>
           <div class="footer-col">
             <h4>Products</h4>
@@ -2429,6 +2429,38 @@
     </div>
 
     <script>
+      /* ===== Environment-aware app links ===== */
+      (() => {
+        const host = window.location.hostname.toLowerCase();
+        const isDev = host === "dev.electrahub.net" || host.endsWith(".dev.electrahub.net");
+        const defaults = isDev
+          ? {
+              admin: "https://admin-portal-dev.electrahub.net",
+              driver: "https://driver-portal-dev.electrahub.net",
+              simulator: "https://ocpp-simulator-dev.electrahub.net",
+            }
+          : {
+              admin: "https://admin-portal.electrahub.net",
+              driver: "https://driver-portal.electrahub.net",
+              simulator: "https://ocpp-simulator.electrahub.net",
+            };
+        const links = { ...defaults, ...(window.ELECTRAHUB_APP_URLS || {}) };
+
+        document.querySelectorAll("[data-app-link]").forEach((anchor) => {
+          const key = anchor.getAttribute("data-app-link");
+          if (links[key]) {
+            anchor.href = links[key];
+          }
+        });
+
+        document.querySelectorAll("[data-app-url-label]").forEach((label) => {
+          const key = label.getAttribute("data-app-url-label");
+          if (links[key]) {
+            label.textContent = new URL(links[key]).hostname;
+          }
+        });
+      })();
+
       /* ===== Loader ===== */
       window.addEventListener("load", () => {
         const loader = document.getElementById("loader");
