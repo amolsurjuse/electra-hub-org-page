@@ -261,16 +261,14 @@
 
       .brand { display: flex; align-items: center; gap: 12px; }
 
-      .brand-mark {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        color: #fff;
-        background: linear-gradient(135deg, var(--primary), var(--accent));
-        box-shadow: 0 8px 20px var(--glow);
+      .brand-logo {
+        width: 154px;
+        height: auto;
       }
+
+      .brand-logo-light { display: none; }
+      [data-theme="dark"] .brand-logo-dark { display: none; }
+      [data-theme="dark"] .brand-logo-light { display: block; }
 
       .brand-text strong {
         font-family: var(--font-display);
@@ -1489,11 +1487,9 @@
     <header class="site-header scrolled" id="site-header">
       <div class="container header-inner">
         <a class="brand" href="#top" aria-label="ElectraHub home">
-          <span class="brand-mark">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"></path></svg>
-          </span>
+          <img class="brand-logo brand-logo-dark" src="electra-hub-logo-dark.svg" alt="ElectraHub" />
+          <img class="brand-logo brand-logo-light" src="electra-hub-logo-light.svg" alt="ElectraHub" />
           <span class="brand-text">
-            <strong>ElectraHub</strong>
             <span>EV CHARGING PLATFORM</span>
           </span>
         </a>
@@ -2378,10 +2374,8 @@
         <div class="footer-grid">
           <div class="footer-brand">
             <a class="brand" href="#top">
-              <span class="brand-mark">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 18 10.5h-6L13 2z"></path></svg>
-              </span>
-              <span class="brand-text"><strong>ElectraHub</strong></span>
+              <img class="brand-logo brand-logo-dark" src="electra-hub-logo-dark.svg" alt="ElectraHub" />
+              <img class="brand-logo brand-logo-light" src="electra-hub-logo-light.svg" alt="ElectraHub" />
             </a>
             <p>Destination, public fast, fleet, and operator software — one EV charging platform from simulation to production.</p>
           </div>
