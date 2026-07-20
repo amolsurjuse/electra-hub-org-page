@@ -806,12 +806,17 @@
         align-items: center;
         gap: 10px;
         padding: 10px 18px;
+        border: 0;
         border-radius: 13px;
         background: var(--text);
         color: var(--bg);
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
         transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
       }
       .store-badge:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+      .store-badge:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
       .store-badge .sb-sub { display: block; font-size: 0.62rem; opacity: 0.75; line-height: 1.1; }
       .store-badge .sb-main { display: block; font-size: 0.95rem; font-weight: 700; line-height: 1.25; }
 
@@ -1388,6 +1393,27 @@
       .modal.open .modal-card { transform: none; }
       .modal-visual { background: var(--surface-2); display: grid; align-content: center; }
       .modal-visual svg { width: 100%; height: auto; }
+      .store-modal-visual {
+        min-height: 270px;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 14px;
+        padding: 32px;
+        text-align: center;
+      }
+      .store-modal-mark {
+        width: 72px;
+        height: 72px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--surface);
+        color: var(--primary);
+      }
+      .store-modal-visual strong { font-size: 1.05rem; }
+      .store-modal-visual span { color: var(--text-2); font-size: 0.84rem; }
       .modal-body { padding: 34px 30px; }
       .modal-body h3 { margin-top: 12px; font-size: 1.3rem; font-weight: 700; }
       .modal-body p { margin-top: 13px; font-size: 0.92rem; color: var(--text-2); }
@@ -1749,10 +1775,10 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>
                 <span><span class="sb-sub">Try the beta on</span><span class="sb-main">TestFlight</span></span>
               </a>
-              <a class="store-badge" href="#" rel="noopener" aria-label="Get it on Google Play">
+              <button class="store-badge" id="google-play-coming-soon" type="button" aria-haspopup="dialog" aria-controls="gallery-modal">
                 <svg width="20" height="22" viewBox="0 0 22 24" fill="currentColor"><path d="M1.22 0.27C0.94 0.56 0.78 1.03 0.78 1.64v20.72c0 0.61 0.16 1.08 0.44 1.37l0.07 0.07L12.8 12.29v-0.28L1.29 0.2zM16.64 16.14l-3.84-3.85v-0.28l3.84-3.85 0.09 0.05 4.55 2.58c1.3 0.74 1.3 1.95 0 2.69l-4.55 2.58zM16.73 16.09L12.8 12.15 1.29 23.8c0.43 0.45 1.13 0.51 1.94 0.05l13.5-7.76M16.73 8.21L3.23 0.45C2.42-0.01 1.72 0.05 1.29 0.5l11.51 11.65z"></path></svg>
-                <span><span class="sb-sub">Get it on</span><span class="sb-main">Google Play</span></span>
-              </a>
+                <span><span class="sb-sub">Android app</span><span class="sb-main">Coming soon</span></span>
+              </button>
             </div>
           </div>
           </div>
@@ -2628,22 +2654,45 @@
       const modalTag = document.getElementById("modal-tag");
       const modalCopy = document.getElementById("modal-copy");
       const modalVisual = document.getElementById("modal-visual");
+      const googlePlayComingSoon = document.getElementById("google-play-coming-soon");
+      let modalTrigger = null;
+
+      const openModal = ({ tag, title, copy, visual }, trigger) => {
+        modalTag.textContent = tag || "Detail";
+        modalTitle.textContent = title || "Charging concept";
+        modalCopy.textContent = copy || "";
+        modalVisual.innerHTML = visual || "";
+        modalTrigger = trigger || null;
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        modal.querySelector(".modal-close").focus();
+      };
 
       const closeModal = () => {
         modal.classList.remove("open");
         modal.setAttribute("aria-hidden", "true");
         document.body.style.overflow = "";
+        modalTrigger?.focus();
+        modalTrigger = null;
       };
       gCards.forEach((card) => {
         card.addEventListener("click", () => {
-          modalTitle.textContent = card.dataset.title || "Charging concept";
-          modalTag.textContent = card.dataset.tag || "Detail";
-          modalCopy.textContent = card.dataset.copy || "";
-          modalVisual.innerHTML = card.querySelector(".g-art").innerHTML;
-          modal.classList.add("open");
-          modal.setAttribute("aria-hidden", "false");
-          document.body.style.overflow = "hidden";
+          openModal({
+            tag: card.dataset.tag,
+            title: card.dataset.title,
+            copy: card.dataset.copy,
+            visual: card.querySelector(".g-art").innerHTML,
+          }, card);
         });
+      });
+      googlePlayComingSoon?.addEventListener("click", () => {
+        openModal({
+          tag: "Android driver app",
+          title: "Google Play is coming soon",
+          copy: "We are preparing the Android driver experience for release. The iOS beta is available today through TestFlight.",
+          visual: '<div class="store-modal-visual" aria-hidden="true"><div class="store-modal-mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M8.5 5.5 6 3"></path><path d="m15.5 5.5 2.5-2.5"></path><path d="M5 10h14v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"></path><path d="M8 14h.01M16 14h.01"></path></svg></div><strong>Android app</strong><span>Coming soon on Google Play</span></div>',
+        }, googlePlayComingSoon);
       });
       modal.querySelector(".modal-close").addEventListener("click", closeModal);
       modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
